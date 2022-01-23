@@ -1,1 +1,1 @@
-# cuddly-computing-machine
+# fuzzy-graph-coloring
