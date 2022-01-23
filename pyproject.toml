@@ -3,6 +3,9 @@ name = "fuzzy-graph-coloring"
 version = "0.1.0"
 description = ""
 authors = ["Jonas Rheiner <39375864+jrheiner@users.noreply.github.com>"]
+packages = [
+    { include = "fuzzy_graph_coloring.py" },
+]
 
 [tool.poetry.dependencies]
 python = "^3.8"
