@@ -8,3 +8,6 @@
 
 ## run pre-commit
 ```poetry run pre-commit run --all-files```
+
+## run pytest
+````poetry run pytest .\tests\````
