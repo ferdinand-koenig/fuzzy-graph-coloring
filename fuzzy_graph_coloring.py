@@ -13,7 +13,7 @@ def fuzzy_color(graph: nx.Graph):
 
 
 def draw_weighted_graph(graph: nx.Graph):
-    pos = nx.spring_layout(graph)
+    pos = nx.circular_layout(graph)
     nx.draw(graph, pos, labels={node: node for node in graph.nodes()})
     nx.draw_networkx_edge_labels(graph, pos, edge_labels=nx.get_edge_attributes(graph, "weight"))
     plt.show()
