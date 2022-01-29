@@ -8,6 +8,10 @@ def main():
     print("Hello World")
 
 
+def fuzzy_color(graph: nx.Graph):
+    return {}
+
+
 def draw_weighted_graph(graph: nx.Graph):
     pos = nx.spring_layout(graph)
     nx.draw(graph, pos, labels={node: node for node in graph.nodes()})
