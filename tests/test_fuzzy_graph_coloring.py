@@ -32,6 +32,25 @@ def _build_example_graph_1() -> nx.Graph:
     return TG1
 
 
+def _build_example_graph_2() -> nx.Graph:
+    TG2 = nx.Graph()
+    TG2.add_edge(1, 2, weight=0.4)
+    TG2.add_edge(1, 3, weight=0.7)
+    TG2.add_edge(1, 4, weight=0.8)
+    TG2.add_edge(2, 4, weight=0.2)
+    TG2.add_edge(2, 5, weight=0.9)
+    TG2.add_edge(3, 4, weight=0.3)
+    TG2.add_edge(3, 6, weight=1.0)
+    TG2.add_edge(4, 5, weight=0.3)
+    TG2.add_edge(4, 6, weight=0.5)
+    TG2.add_edge(5, 6, weight=0.7)
+    TG2.add_edge(5, 7, weight=0.8)
+    TG2.add_edge(5, 8, weight=0.5)
+    TG2.add_edge(6, 7, weight=0.7)
+    TG2.add_edge(7, 8, weight=0.6)
+    return TG2
+
+
 def test_fuzzy_color_case_1():
     test_graph = _build_example_graph_1()
     solution = fuzzy_color(test_graph)
