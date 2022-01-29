@@ -1,4 +1,6 @@
 import networkx as nx
+import numpy as np
+from numpy.random import default_rng
 
 from fuzzy_graph_coloring import __version__, fuzzy_color
 
@@ -7,7 +9,16 @@ def test_version():
     assert __version__ == '0.1.0'
 
 
-def _build_test_graph_1() -> nx.Graph:
+def _generate_fuzzy_graph(vertices: int, edge_probability: float, seed: int) -> nx.Graph:
+    random_graph = nx.fast_gnp_random_graph(n=vertices, p=edge_probability, seed=seed)
+    rng = default_rng(seed)
+    weight_values = np.around(rng.uniform(size=random_graph.number_of_edges()), decimals=2)
+    weights = {edge: weight_values for edge in random_graph.edges()}
+    nx.set_edge_attributes(random_graph, values=weights, name="weight")
+    return random_graph
+
+
+def _build_example_graph_1() -> nx.Graph:
     """
     Build example fuzzy graph also presented in the paper Fig. 2.2
     :return: NetworkX Graph
@@ -23,7 +34,7 @@ def _build_test_graph_1() -> nx.Graph:
 
 
 def test_fuzzy_color_case_1():
-    test_graph = _build_test_graph_1()
+    test_graph = _build_example_graph_1()
     solution = fuzzy_color(test_graph)
     expected_solution = {
         1: {
