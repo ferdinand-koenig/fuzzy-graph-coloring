@@ -51,6 +51,32 @@ def _build_example_graph_2() -> nx.Graph:
     return TG2
 
 
+def _build_example_crisp_graph() -> nx.Graph:
+    CG = nx.Graph()
+    CG.add_edge(1, 2)
+    CG.add_edge(1, 3)
+    CG.add_edge(1, 5)
+    CG.add_edge(1, 6)
+    CG.add_edge(1, 7)
+    CG.add_edge(2, 3)
+    CG.add_edge(2, 5)
+    CG.add_edge(2, 6)
+    CG.add_edge(3, 4)
+    CG.add_edge(3, 5)
+    CG.add_edge(3, 6)
+    CG.add_edge(4, 6)
+    CG.add_edge(4, 10)
+    CG.add_edge(5, 6)
+    CG.add_edge(5, 8)
+    CG.add_edge(5, 9)
+    CG.add_edge(6, 8)
+    CG.add_edge(7, 8)
+    CG.add_edge(8, 8)
+    CG.add_edge(8, 10)
+    CG.add_edge(9, 10)
+    return CG
+
+
 def test_fuzzy_color_case_1():
     test_graph = _build_example_graph_1()
     solution = fuzzy_color(test_graph)
