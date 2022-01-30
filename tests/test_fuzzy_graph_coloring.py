@@ -93,3 +93,115 @@ def test_fuzzy_color_case_1():
         }
     }
     assert solution == expected_solution
+
+
+def test_fuzzy_color_case_2():
+    test_graph = _build_example_graph_2()
+    solution = fuzzy_color(test_graph)
+    expected_solution = {
+        1: {
+            "coloring": {
+                1: 1,
+                2: 1,
+                3: 1,
+                4: 1,
+                5: 1,
+                6: 1,
+                7: 1,
+                8: 1
+            },
+            "score": 0
+        },
+        2: {
+            "coloring": {
+                1: 1,
+                2: 2,
+                3: 2,
+                4: 2,
+                5: 1,
+                6: 1,
+                7: 2,
+                8: 1
+            },
+            "score": 0.7976
+        },
+        3: {
+            "coloring": {
+                1: 1,
+                2: 2,
+                3: 3,
+                4: 2,
+                5: 3,
+                6: 1,
+                7: 2,
+                8: 1
+            },
+            "score": 0.9761
+        },
+        4: {
+            "coloring": {
+                1: 1,
+                2: 2,
+                3: 2,
+                4: 3,
+                5: 1,
+                6: 4,
+                7: 2,
+                8: 3
+            },
+            "score": 1
+        },
+        5: {
+            "coloring": {
+                1: 1,
+                2: 2,
+                3: 2,
+                4: 3,
+                5: 1,
+                6: 4,
+                7: 2,
+                8: 5
+            },
+            "score": 1
+        },
+        6: {
+            "coloring": {
+                1: 1,
+                2: 2,
+                3: 2,
+                4: 3,
+                5: 1,
+                6: 4,
+                7: 5,
+                8: 6
+            },
+            "score": 1
+        },
+        7: {
+            "coloring": {
+                1: 1,
+                2: 2,
+                3: 2,
+                4: 3,
+                5: 4,
+                6: 5,
+                7: 6,
+                8: 7
+            },
+            "score": 1
+        },
+        8: {
+            "coloring": {
+                1: 1,
+                2: 2,
+                3: 3,
+                4: 4,
+                5: 5,
+                6: 6,
+                7: 7,
+                8: 8
+            },
+            "score": 1
+        }
+    }
+    assert solution == expected_solution
