@@ -60,5 +60,23 @@ def draw_weighted_graph(graph: nx.Graph):
     plt.show()
 
 
+def is_fuzzy_graph(graph: nx.Graph) -> bool:
+    """
+    Check if edges have the weight attribute and hold numeric value < 0 and >= 1.
+
+    :param graph: NetworkX graph
+    :return: Bool if graph is fuzzy
+    """
+    weights = nx.get_edge_attributes(graph, "weight")
+    if not weights:
+        return False
+    else:
+        for weight in weights.values():
+            if not (0 < weight <= 1):
+                print(weight)
+                return False
+    return True
+
+
 if __name__ == '__main__':
     main()
