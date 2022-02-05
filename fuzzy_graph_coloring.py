@@ -36,9 +36,58 @@ def fitness_function_factory(graph: nx.Graph, k: int):
     return fitness_function
 
 
-def incompatibility_elimination_crossover(parents, offspring_size, ga_instance):
-    offspring = []
-    return np.array(offspring)
+def incompatibility_elimination_crossover_factory(graph: nx.Graph):
+    """
+
+    :param graph:
+    :return:
+    """
+
+    def incompatibility_elimination_crossover(parents, offspring_size, ga_instance):
+        """
+
+        :param parents: The selected parents.
+        :param offspring_size: The size of the offspring as a tuple of 2 numbers: (the offspring size, number of genes)
+        :param ga_instance: Instance of the pygad.GA class
+        :return:
+        """
+        assert parents.size == offspring_size[0]
+        assert offspring_size[0] == ga_instance.sol_per_pop
+
+        idx = 0
+        offspring = np.array([])
+        while len(offspring) != offspring_size[0]:
+            parent1 = parents[idx % parents.shape[0], :].copy()
+            parent2 = parents[(idx + 1) % parents.shape[0], :].copy()
+            # Get incompatible colors...
+            incompatible_colors_parent1 = []
+            incompatible_colors_parent2 = []
+            for (i, j) in graph.edges():
+                if _y_ij(i, j, parent1):  # if incompatible
+                    incompatible_colors_parent1.append(parent1[i])  # add the color to list of incompatible colors
+                if _y_ij(i, j, parent2):
+                    incompatible_colors_parent2.append(parent2[i])
+
+            # ... and exchange with the colors of other parent except for last appearance
+            child1 = np.copy(parent1)
+            child2 = np.copy(parent2)
+            for ic in incompatible_colors_parent1:
+                ic_mask = (parent1 == ic)
+                # ic_mask[len(ic_mask) - 1 - ic_mask[::-1].index(True)] = False
+                ic_mask[np.where(ic_mask)[0][-1]] = False
+                child1[ic_mask] = parent2[ic_mask]
+            for ic in incompatible_colors_parent2:
+                ic_mask = (parent2 == ic)
+                ic_mask[np.where(ic_mask)[0][-1]] = False
+                child2[ic_mask] = parent1[ic_mask]
+
+            offspring = np.append(offspring, child1)
+            offspring = np.append(offspring, child2)
+            idx += 1
+
+        return offspring
+
+    return incompatibility_elimination_crossover
 
 
 def color_transposition_mutation(offspring, ga_instance):
@@ -54,7 +103,6 @@ def color_transposition_mutation(offspring, ga_instance):
         if random.random() <= ga_instance.mutation_probability:  # for each chromosome, there is a chance to be mutated
             color_a, color_b = default_rng().choice(np.unique(chromosome), size=2,
                                                     replace=False)  # take 2 different colors
-
             # swap those colors
             mask_a = (chromosome == color_a)
             mask_b = (chromosome == color_b)
@@ -81,12 +129,11 @@ def initial_population_generator(k: int, sol_per_pop: int, num_genes: int):
 
 def fuzzy_color(graph: nx.Graph, k: int = None):
     num_generations = 15
-    num_parents_mating = 10
-
-    sol_per_pop = 100
+    solutions_per_pop = 100
+    num_parents_mating = solutions_per_pop
     num_genes = graph.number_of_nodes()
     initial_population = initial_population_generator(k if k is not None else graph.number_of_nodes(),
-                                                      sol_per_pop,
+                                                      solutions_per_pop,
                                                       num_genes)
 
     gene_type = int
@@ -95,7 +142,7 @@ def fuzzy_color(graph: nx.Graph, k: int = None):
     parent_selection_type = "tournament"
     K_tournament = 5
 
-    crossover_type = incompatibility_elimination_crossover
+    crossover_type = incompatibility_elimination_crossover_factory(graph)
     crossover_probability = 0.8
 
     mutation_type = color_transposition_mutation
