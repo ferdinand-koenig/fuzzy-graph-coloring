@@ -4,6 +4,8 @@ import itertools
 
 import matplotlib.pyplot as plt
 import networkx as nx
+import numpy as np
+from numpy.random import default_rng
 
 
 def main():
@@ -58,6 +60,14 @@ def draw_weighted_graph(graph: nx.Graph):
     nx.draw(graph, pos, labels={node: node for node in graph.nodes()})
     nx.draw_networkx_edge_labels(graph, pos, edge_labels=nx.get_edge_attributes(graph, "weight"))
     plt.show()
+
+
+def _generate_fuzzy_graph(vertices: int, edge_probability: float, seed: int) -> nx.Graph:
+    random_graph = nx.fast_gnp_random_graph(n=vertices, p=edge_probability, seed=seed)
+    rng = default_rng(seed)
+    weights = {edge: np.around(rng.uniform(), decimals=2) for edge in random_graph.edges()}
+    nx.set_edge_attributes(random_graph, values=weights, name="weight")
+    return random_graph
 
 
 def is_fuzzy_graph(graph: nx.Graph) -> bool:

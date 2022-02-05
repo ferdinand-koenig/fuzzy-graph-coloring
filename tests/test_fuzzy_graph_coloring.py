@@ -1,20 +1,10 @@
 import networkx as nx
-import numpy as np
-from numpy.random import default_rng
 
 from fuzzy_graph_coloring import __version__, fuzzy_color
 
 
 def test_version():
     assert __version__ == '0.1.0'
-
-
-def _generate_fuzzy_graph(vertices: int, edge_probability: float, seed: int) -> nx.Graph:
-    random_graph = nx.fast_gnp_random_graph(n=vertices, p=edge_probability, seed=seed)
-    rng = default_rng(seed)
-    weights = {edge: np.around(rng.uniform(), decimals=2) for edge in random_graph.edges()}
-    nx.set_edge_attributes(random_graph, values=weights, name="weight")
-    return random_graph
 
 
 def _build_example_graph_1() -> nx.Graph:
