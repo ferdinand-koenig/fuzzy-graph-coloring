@@ -42,7 +42,26 @@ def incompatibility_elimination_crossover(parents, offspring_size, ga_instance):
 
 
 def color_transposition_mutation(offspring, ga_instance):
-    return offspring
+    """
+    Randomly selects two colors and switches them mutually.
+    The chance that the mutation operator is applied to a chromosome is given by the mutation probability.
+    :param offspring: The offspring to be mutated
+    :param ga_instance: Instance of the pygad.GA class
+    :return: Mutated offspring
+    """
+    mutation_offspring = np.array([])
+    for chromosome in offspring:
+        if random.random() <= ga_instance.mutation_probability:  # for each chromosome, there is a chance to be mutated
+            color_a, color_b = default_rng().choice(np.unique(chromosome), size=2,
+                                                    replace=False)  # take 2 different colors
+
+            # swap those colors
+            mask_a = (chromosome == color_a)
+            mask_b = (chromosome == color_b)
+            chromosome[mask_a] = color_b
+            chromosome[mask_b] = color_a
+        mutation_offspring = np.append(mutation_offspring, chromosome)
+    return mutation_offspring
 
 
 def initial_population_generator(k: int, sol_per_pop: int, num_genes: int):
@@ -55,7 +74,7 @@ def initial_population_generator(k: int, sol_per_pop: int, num_genes: int):
             chromosome[gene_idx] = color + 1
             # [1, 0, 2]
         zero_mask = (chromosome == 0)  # [false, true, false]
-        chromosome[zero_mask] = default_rng().choice(range(1, k+1), zero_mask.sum())
+        chromosome[zero_mask] = default_rng().choice(range(1, k + 1), zero_mask.sum())
         initial_population = np.append(initial_population, chromosome)
     return initial_population
 
@@ -71,8 +90,6 @@ def fuzzy_color(graph: nx.Graph, k: int = None):
                                                       num_genes)
 
     gene_type = int
-    # init_range_low = 1
-    # init_range_high = k if k is not None else graph.number_of_nodes()
     gene_space = {'low': 1, 'high': k if k is not None else graph.number_of_nodes()}
 
     parent_selection_type = "tournament"
