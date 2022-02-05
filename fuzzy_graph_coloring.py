@@ -60,7 +60,7 @@ def bruteforce_fuzzy_color(graph: nx.Graph):
             for ie in incompatible_edges:
                 total_incompatibility += graph[ie[0]][ie[1]]["weight"]
         k = len(set(color_assignment))
-        score = 1 - (total_incompatibility / weight_sum)
+        score = 1 - (total_incompatibility / weight_sum)  # 1 - DTI
         if k not in colorings.keys():
             colorings[k] = {}
             colorings[k]["coloring"] = {c: color_assignment[c - 1] for c in colors}
