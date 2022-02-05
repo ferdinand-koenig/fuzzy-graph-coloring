@@ -20,12 +20,18 @@ def _y_ij(i: int, j: int, chromosome: tuple) -> bool:
 
 def fitness_function_factory(graph: nx.Graph):
     """
-
-    :param graph:
-    :return:
+    Factory to generate fitness-function. Loosely couples graph-instance.
+    :param graph: graph-instance (nx.Graph)
+    :return: fitness_function
     """
 
     def fitness_function(solution: tuple, solution_idx):
+        """
+        Fitness function to measure the quality of a given chromosome, i.e., solution.
+        :param solution: Chromosome: tuple with length equal to number of vertices. Each item, i.e., gen is a color
+        :param solution_idx:
+        :return: fitness: 1 - (Degree of Total Incompatibility (DTI))
+        """
         total_incompatibility = 0
         for (i, j) in graph.edges():
             total_incompatibility += graph[i][j]["weight"] * _y_ij(i, j, solution)  # eq. (2.10a)
@@ -37,18 +43,18 @@ def fitness_function_factory(graph: nx.Graph):
 
 def incompatibility_elimination_crossover_factory(graph: nx.Graph):
     """
-
-    :param graph:
-    :return:
+    Factory to generate IEX-function. Loosely couples graph-instance.
+    :param graph: graph-instance (nx.Graph)
+    :return: incompatibility_elimination_crossover (IEX)-function
     """
 
     def incompatibility_elimination_crossover(parents, offspring_size, ga_instance):
         """
-
+        IEX-function.
         :param parents: The selected parents.
         :param offspring_size: The size of the offspring as a tuple of 2 numbers: (the offspring size, number of genes)
         :param ga_instance: Instance of the pygad.GA class
-        :return:
+        :return: offspring
         """
         assert parents.size == offspring_size[0]
         assert offspring_size[0] == ga_instance.sol_per_pop
