@@ -5,6 +5,8 @@ import itertools
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
+import pygad
+import random
 from numpy.random import default_rng
 
 
@@ -34,7 +36,71 @@ def fitness_function_factory(graph: nx.Graph, k: int):
     return fitness_function
 
 
-def fuzzy_color(graph: nx.Graph):
+def incompatibility_elimination_crossover(parents, offspring_size, ga_instance):
+    offspring = []
+    return np.array(offspring)
+
+
+def color_transposition_mutation(offspring, ga_instance):
+    return offspring
+
+
+def initial_population_generator(k: int, sol_per_pop: int, num_genes: int):
+    initial_population = np.array([])
+    for _ in range(sol_per_pop):
+        chromosome = np.zeros(num_genes, int)
+        for color, gene_idx in enumerate(random.sample(range(num_genes), k)):
+            # random.sample(range(num_genes), k) -> [0,2] # positions of the colors
+            # 1: 0, 2: 2 ; color to position mapping
+            chromosome[gene_idx] = color + 1
+            # [1, 0, 2]
+        zero_mask = (chromosome == 0)  # [false, true, false]
+        chromosome[zero_mask] = default_rng().choice(range(1, k+1), zero_mask.sum())
+        initial_population = np.append(initial_population, chromosome)
+    return initial_population
+
+
+def fuzzy_color(graph: nx.Graph, k: int = None):
+    num_generations = 15
+    num_parents_mating = 10
+
+    sol_per_pop = 100
+    num_genes = graph.number_of_nodes()
+    initial_population = initial_population_generator(k if k is not None else graph.number_of_nodes(),
+                                                      sol_per_pop,
+                                                      num_genes)
+
+    gene_type = int
+    # init_range_low = 1
+    # init_range_high = k if k is not None else graph.number_of_nodes()
+    gene_space = {'low': 1, 'high': k if k is not None else graph.number_of_nodes()}
+
+    parent_selection_type = "tournament"
+    K_tournament = 5
+
+    crossover_type = incompatibility_elimination_crossover
+    crossover_probability = 0.8
+
+    mutation_type = color_transposition_mutation
+    mutation_probability = 0.3
+
+    ga_instance = pygad.GA(num_generations=num_generations,
+                           num_parents_mating=num_parents_mating,
+                           initial_population=initial_population,
+                           gene_type=gene_type,
+                           gene_space=gene_space,
+                           fitness_func=fitness_function_factory(graph,
+                                                                 k if k is not None else graph.number_of_nodes()),
+                           parent_selection_type=parent_selection_type,
+                           K_tournament=K_tournament,
+                           crossover_type=crossover_type,
+                           crossover_probability=crossover_probability,
+                           mutation_type=mutation_type,
+                           mutation_probability=mutation_probability)
+
+    print("initial population:")
+    print(ga_instance.initial_population)
+
     return {}
 
 
