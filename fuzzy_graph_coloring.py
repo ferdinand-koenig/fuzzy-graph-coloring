@@ -12,6 +12,28 @@ def main():
     print("Hello World")
 
 
+def _y_ij(i: int, j: int, chromosome: tuple) -> bool:
+    return chromosome[i] == chromosome[j]
+
+
+def fitness_function_factory(graph: nx.Graph, k: int):
+    """
+
+    :param graph:
+    :param k: k-coloring
+    :return:
+    """
+
+    def fitness_function(solution: tuple, solution_idx):
+        total_incompatibility = 0
+        for (i, j) in graph.edges():
+            total_incompatibility += graph[i][j]["weight"] * _y_ij(i, j, solution)  # eq. (2.10a)
+        fitness = 1 - (total_incompatibility / graph.size(weight="weight"))  # 1 - DTI
+        return fitness
+
+    return fitness_function
+
+
 def fuzzy_color(graph: nx.Graph):
     return {}
 
