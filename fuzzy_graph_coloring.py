@@ -18,11 +18,10 @@ def _y_ij(i: int, j: int, chromosome: tuple) -> bool:
     return chromosome[i] == chromosome[j]
 
 
-def fitness_function_factory(graph: nx.Graph, k: int):
+def fitness_function_factory(graph: nx.Graph):
     """
 
     :param graph:
-    :param k: k-coloring
     :return:
     """
 
@@ -55,7 +54,7 @@ def incompatibility_elimination_crossover_factory(graph: nx.Graph):
         assert offspring_size[0] == ga_instance.sol_per_pop
 
         idx = 0
-        offspring = np.array([])
+        offspring = np.empty((0, parents.shape[1]), int)
         while len(offspring) != offspring_size[0]:
             parent1 = parents[idx % parents.shape[0], :].copy()
             parent2 = parents[(idx + 1) % parents.shape[0], :].copy()
@@ -81,8 +80,8 @@ def incompatibility_elimination_crossover_factory(graph: nx.Graph):
                 ic_mask[np.where(ic_mask)[0][-1]] = False
                 child2[ic_mask] = parent1[ic_mask]
 
-            offspring = np.append(offspring, child1)
-            offspring = np.append(offspring, child2)
+            offspring = np.append(offspring, [child1], axis=0)
+            offspring = np.append(offspring, [child2], axis=0)
             idx += 1
 
         return offspring
@@ -98,7 +97,7 @@ def color_transposition_mutation(offspring, ga_instance):
     :param ga_instance: Instance of the pygad.GA class
     :return: Mutated offspring
     """
-    mutation_offspring = np.array([])
+    mutation_offspring = np.empty((0, offspring.shape[1]), int)
     for chromosome in offspring:
         if random.random() <= ga_instance.mutation_probability:  # for each chromosome, there is a chance to be mutated
             color_a, color_b = default_rng().choice(np.unique(chromosome), size=2,
@@ -108,12 +107,12 @@ def color_transposition_mutation(offspring, ga_instance):
             mask_b = (chromosome == color_b)
             chromosome[mask_a] = color_b
             chromosome[mask_b] = color_a
-        mutation_offspring = np.append(mutation_offspring, chromosome)
+        mutation_offspring = np.append(mutation_offspring, [chromosome], axis=0)
     return mutation_offspring
 
 
 def initial_population_generator(k: int, sol_per_pop: int, num_genes: int):
-    initial_population = np.array([])
+    initial_population = np.empty((0, num_genes), int)
     for _ in range(sol_per_pop):
         chromosome = np.zeros(num_genes, int)
         for color, gene_idx in enumerate(random.sample(range(num_genes), k)):
@@ -123,7 +122,7 @@ def initial_population_generator(k: int, sol_per_pop: int, num_genes: int):
             # [1, 0, 2]
         zero_mask = (chromosome == 0)  # [false, true, false]
         chromosome[zero_mask] = default_rng().choice(range(1, k + 1), zero_mask.sum())
-        initial_population = np.append(initial_population, chromosome)
+        initial_population = np.append(initial_population, [chromosome], axis=0)
     return initial_population
 
 
@@ -153,8 +152,7 @@ def fuzzy_color(graph: nx.Graph, k: int = None):
                            initial_population=initial_population,
                            gene_type=gene_type,
                            gene_space=gene_space,
-                           fitness_func=fitness_function_factory(graph,
-                                                                 k if k is not None else graph.number_of_nodes()),
+                           fitness_func=fitness_function_factory(graph),
                            parent_selection_type=parent_selection_type,
                            K_tournament=K_tournament,
                            crossover_type=crossover_type,
