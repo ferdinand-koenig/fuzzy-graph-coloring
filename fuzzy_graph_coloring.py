@@ -168,7 +168,12 @@ def fuzzy_color(graph: nx.Graph, k: int = None):
 
     print("initial population:")
     print(ga_instance.initial_population)
-
+    ga_instance.run()
+    ga_instance.plot_fitness()
+    solution, solution_fitness, solution_idx = ga_instance.best_solution()
+    print("Parameters of the best solution : {solution}".format(solution=solution))
+    print("Fitness value of the best solution = {solution_fitness}".format(solution_fitness=solution_fitness))
+    print("Index of the best solution : {solution_idx}".format(solution_idx=solution_idx))
     return {}
 
 
@@ -244,5 +249,20 @@ def is_fuzzy_graph(graph: nx.Graph) -> bool:
     return True
 
 
+def _build_example_graph_1() -> nx.Graph:
+    """
+    Build example fuzzy graph also presented in the paper Fig. 2.2
+    :return: NetworkX Graph
+    """
+    TG1 = nx.Graph()
+    TG1.add_edge(1, 2, weight=0.7)
+    TG1.add_edge(1, 3, weight=0.8)
+    TG1.add_edge(1, 4, weight=0.5)
+    TG1.add_edge(2, 3, weight=0.3)
+    TG1.add_edge(2, 4, weight=0.4)
+    TG1.add_edge(3, 4, weight=1.0)
+    return TG1
+
+
 if __name__ == '__main__':
-    main()
+    fuzzy_color(_build_example_graph_1(), 2)
