@@ -68,8 +68,8 @@ def _incompatibility_elimination_crossover_factory(graph: nx.Graph):
             parent1 = parents[idx % parents.shape[0], :].copy()
             parent2 = parents[(idx + 1) % parents.shape[0], :].copy()
 
-            child1 = np.copy(parent1)
-            child2 = np.copy(parent2)
+            child1 = parent1.copy()
+            child2 = parent2.copy()
 
             if random.random() <= ga_instance.crossover_probability and ga_instance.crossover_probability > 0:
                 # Get incompatible colors...
@@ -84,7 +84,7 @@ def _incompatibility_elimination_crossover_factory(graph: nx.Graph):
                 # ... and exchange with the colors of other parent except for a random appearance
 
                 for ic in incompatible_colors_parent1:
-                    ic_mask = (parent1 == ic)
+                    ic_mask = (child1 == ic)
                     ic_mask[default_rng().choice(np.where(ic_mask)[0])] = False
                     child1[ic_mask] = parent2[ic_mask]
                 for ic in incompatible_colors_parent2:
@@ -94,6 +94,8 @@ def _incompatibility_elimination_crossover_factory(graph: nx.Graph):
 
             offspring = np.append(offspring, [child1], axis=0)
             offspring = np.append(offspring, [child2], axis=0)
+            assert np.max(child1) == len(np.unique(child1))
+            assert np.max(child2) == len(np.unique(child2))
             idx += 1
 
         return offspring
@@ -121,6 +123,7 @@ def _color_transposition_mutation(offspring, ga_instance):
             chromosome[mask_a] = color_b
             chromosome[mask_b] = color_a
         mutation_offspring = np.append(mutation_offspring, [chromosome], axis=0)
+        assert np.max(chromosome) == len(np.unique(chromosome))
     return mutation_offspring
 
 
@@ -206,7 +209,7 @@ def fuzzy_color(graph: nx.Graph, k: int = None):
                            save_best_solutions=True,
                            on_generation=on_generation)
 
-    ga_instance.local_search_probability = 0.5
+    ga_instance.local_search_probability = 0.2
     ga_instance.run()
     ga_instance.plot_fitness()
     final_solution_fitness = np.max(ga_instance.best_solutions_fitness)
@@ -322,5 +325,5 @@ def _build_example_graph_2() -> nx.Graph:
 
 
 if __name__ == '__main__':
-    fuzzy_color(_build_example_graph_2(), 2)
-    # fuzzy_color(_generate_fuzzy_graph(1000, 0.25, 42), 6)
+    # fuzzy_color(_build_example_graph_2(), 2)
+    fuzzy_color(_generate_fuzzy_graph(25, 0.25, 42), 3)
