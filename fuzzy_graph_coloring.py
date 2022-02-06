@@ -18,14 +18,14 @@ def _y_ij(i: int, j: int, chromosome: tuple) -> bool:
     return chromosome[i] == chromosome[j]
 
 
-def fitness_function_factory(graph: nx.Graph):
+def _fitness_function_factory(graph: nx.Graph):
     """
     Factory to generate fitness-function. Loosely couples graph-instance.
     :param graph: graph-instance (nx.Graph)
     :return: fitness_function
     """
 
-    def fitness_function(solution: tuple, solution_idx):
+    def _fitness_function(solution: tuple, solution_idx):
         """
         Fitness function to measure the quality of a given chromosome, i.e., solution.
         :param solution: Chromosome: tuple with length equal to number of vertices. Each item, i.e., gen is a color
@@ -38,17 +38,17 @@ def fitness_function_factory(graph: nx.Graph):
         fitness = 1 - (total_incompatibility / graph.size(weight="weight"))  # 1 - DTI
         return fitness
 
-    return fitness_function
+    return _fitness_function
 
 
-def incompatibility_elimination_crossover_factory(graph: nx.Graph):
+def _incompatibility_elimination_crossover_factory(graph: nx.Graph):
     """
     Factory to generate IEX-function. Loosely couples graph-instance.
     :param graph: graph-instance (nx.Graph)
     :return: incompatibility_elimination_crossover (IEX)-function
     """
 
-    def incompatibility_elimination_crossover(parents, offspring_size, ga_instance):
+    def _incompatibility_elimination_crossover(parents, offspring_size, ga_instance):
         """
         IEX-function.
         :param parents: The selected parents.
@@ -92,10 +92,10 @@ def incompatibility_elimination_crossover_factory(graph: nx.Graph):
 
         return offspring
 
-    return incompatibility_elimination_crossover
+    return _incompatibility_elimination_crossover
 
 
-def color_transposition_mutation(offspring, ga_instance):
+def _color_transposition_mutation(offspring, ga_instance):
     """
     Randomly selects two colors and switches them mutually.
     The chance that the mutation operator is applied to a chromosome is given by the mutation probability.
@@ -117,7 +117,14 @@ def color_transposition_mutation(offspring, ga_instance):
     return mutation_offspring
 
 
-def initial_population_generator(k: int, sol_per_pop: int, num_genes: int):
+def _initial_population_generator(k: int, sol_per_pop: int, num_genes: int):
+    """
+    Generates the initial Genetic Algorithm population.
+    :param k: Number of available colors (k-coloring)
+    :param sol_per_pop: Number of solutions/chromosomes per population
+    :param num_genes: Number of genes in the solution/chromosome
+    :return: Initial population as nested numpy array
+    """
     initial_population = np.empty((0, num_genes), int)
     for _ in range(sol_per_pop):
         chromosome = np.zeros(num_genes, int)
@@ -137,9 +144,9 @@ def fuzzy_color(graph: nx.Graph, k: int = None):
     solutions_per_pop = 100
     num_parents_mating = solutions_per_pop
     num_genes = graph.number_of_nodes()
-    initial_population = initial_population_generator(k if k is not None else graph.number_of_nodes(),
-                                                      solutions_per_pop,
-                                                      num_genes)
+    initial_population = _initial_population_generator(k if k is not None else graph.number_of_nodes(),
+                                                       solutions_per_pop,
+                                                       num_genes)
 
     gene_type = int
     gene_space = {'low': 1, 'high': k if k is not None else graph.number_of_nodes()}
@@ -147,10 +154,10 @@ def fuzzy_color(graph: nx.Graph, k: int = None):
     parent_selection_type = "tournament"
     K_tournament = 5
 
-    crossover_type = incompatibility_elimination_crossover_factory(graph)
+    crossover_type = _incompatibility_elimination_crossover_factory(graph)
     crossover_probability = 0.8
 
-    mutation_type = color_transposition_mutation
+    mutation_type = _color_transposition_mutation
     mutation_probability = 0.3
 
     ga_instance = pygad.GA(num_generations=num_generations,
@@ -158,7 +165,7 @@ def fuzzy_color(graph: nx.Graph, k: int = None):
                            initial_population=initial_population,
                            gene_type=gene_type,
                            gene_space=gene_space,
-                           fitness_func=fitness_function_factory(graph),
+                           fitness_func=_fitness_function_factory(graph),
                            parent_selection_type=parent_selection_type,
                            K_tournament=K_tournament,
                            crossover_type=crossover_type,
@@ -233,7 +240,7 @@ def _generate_fuzzy_graph(vertices: int, edge_probability: float, seed: int) -> 
 
 def is_fuzzy_graph(graph: nx.Graph) -> bool:
     """
-    Check if edges have the weight attribute and hold numeric value < 0 and >= 1.
+    Check if edges have the weight attribute and hold a numeric value < 0 and >= 1.
 
     :param graph: NetworkX graph
     :return: Bool if graph is fuzzy
