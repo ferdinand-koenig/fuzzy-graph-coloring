@@ -145,6 +145,15 @@ def _initial_population_generator(k: int, sol_per_pop: int, num_genes: int):
     return initial_population
 
 
+def on_generation(ga_instance):
+    for chromosome in ga_instance.population:
+        if random.random() <= ga_instance.local_search_probability:
+            print("on_generation()")
+            # print(ga_instance.population)
+            print(ga_instance.local_search_probability)
+            ga_instance.population[-1] = np.array([1, 2, 1, 2, 1, 2, 1, 2])
+
+
 def fuzzy_color(graph: nx.Graph, k: int = None):
     num_generations = 15
     solutions_per_pop = 100  # solutions_per_pop = offspring_size + keep_parents
@@ -179,16 +188,16 @@ def fuzzy_color(graph: nx.Graph, k: int = None):
                            crossover_type=crossover_type,
                            crossover_probability=crossover_probability,
                            mutation_type=mutation_type,
-                           mutation_probability=mutation_probability)
+                           mutation_probability=mutation_probability,
+                           save_best_solutions=True,
+                           on_generation=on_generation)
 
-    print("initial population:")
-    print(ga_instance.initial_population[:10])
+    ga_instance.local_search_probability = 0.5
     ga_instance.run()
     ga_instance.plot_fitness()
-    solution, solution_fitness, solution_idx = ga_instance.best_solution()
-    print("Parameters of the best solution : {solution}".format(solution=solution))
-    print("Fitness value of the best solution = {solution_fitness}".format(solution_fitness=solution_fitness))
-    print("Index of the best solution : {solution_idx}".format(solution_idx=solution_idx))
+    final_solution_fitness = np.max(ga_instance.best_solutions_fitness)
+    final_solution_idx = np.argmax(ga_instance.best_solutions_fitness)
+    print(ga_instance.best_solutions[final_solution_idx], final_solution_fitness)
     return {}
 
 
