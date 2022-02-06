@@ -1,5 +1,6 @@
 __version__ = "0.1.0"
 
+import datetime
 import itertools
 
 import matplotlib.pyplot as plt
@@ -56,9 +57,6 @@ def _incompatibility_elimination_crossover_factory(graph: nx.Graph):
         :param ga_instance: Instance of the pygad.GA class
         :return: offspring
         """
-        print(f"len(parents): {len(parents)}")
-        print(f"offspring_size: {offspring_size}")
-        print(f"ga_instance.sol_per_pop: {ga_instance.sol_per_pop}")
         # assert len(parents) == offspring_size[0]
         # assert offspring_size[0] == ga_instance.sol_per_pop
 
@@ -89,7 +87,7 @@ def _incompatibility_elimination_crossover_factory(graph: nx.Graph):
                     child1[ic_mask] = parent2[ic_mask]
                 for ic in incompatible_colors_parent2:
                     ic_mask = (child2 == ic)
-                    ic_mask[np.where(ic_mask)[0][-1]] = False
+                    ic_mask[default_rng().choice(np.where(ic_mask)[0])] = False
                     child2[ic_mask] = parent1[ic_mask]
 
             offspring = np.append(offspring, [child1], axis=0)
@@ -153,9 +151,12 @@ def _local_search(chromosome: np.array, ga_instance) -> np.array:
     k = np.max(chromosome)
     best = ([], 0)
     for idx in range(len(chromosome)):
+        if (chromosome == chromosome[idx]).sum() == 1:
+            continue
+        assert (chromosome == chromosome[idx]).sum() != 0
         temp_chromosome = chromosome.copy()
-        for color in range(k):
-            temp_chromosome[idx] = color + 1
+        for color in range(1, k+1):
+            temp_chromosome[idx] = color
             temp_fitness = ga_instance.fitness_func(temp_chromosome, 0)
             if temp_fitness > best[1]:
                 best = (temp_chromosome, temp_fitness)
@@ -163,6 +164,7 @@ def _local_search(chromosome: np.array, ga_instance) -> np.array:
 
 
 def on_generation(ga_instance):
+    print("almost done", ga_instance.generations_completed, datetime.datetime.now().strftime("%H:%M:%S.%f"))
     if not ga_instance.local_search_probability > 0:
         return
     for idx, chromosome in enumerate(ga_instance.population):
@@ -171,51 +173,73 @@ def on_generation(ga_instance):
             ga_instance.population[idx] = new_chromosome
 
 
-def fuzzy_color(graph: nx.Graph, k: int = None):
+def fuzzy_color(graph: nx.Graph, k_coloring: int = None):
     num_generations = 15
     solutions_per_pop = 100  # solutions_per_pop = offspring_size + keep_parents
     num_parents_mating = solutions_per_pop
     keep_parents = 50
     num_genes = graph.number_of_nodes()
-    initial_population = _initial_population_generator(k if k is not None else graph.number_of_nodes(),
-                                                       solutions_per_pop,
-                                                       num_genes)
-
     gene_type = int
-    gene_space = {'low': 1, 'high': k if k is not None else graph.number_of_nodes()}
-
     parent_selection_type = "tournament"
     K_tournament = 10
-
     crossover_type = _incompatibility_elimination_crossover_factory(graph)
     crossover_probability = 0.8
-
     mutation_type = _color_transposition_mutation
     mutation_probability = 0.3
 
-    ga_instance = pygad.GA(num_generations=num_generations,
-                           num_parents_mating=num_parents_mating,
-                           keep_parents=keep_parents,
-                           initial_population=initial_population,
-                           gene_type=gene_type,
-                           gene_space=gene_space,
-                           fitness_func=_fitness_function_factory(graph),
-                           parent_selection_type=parent_selection_type,
-                           K_tournament=K_tournament,
-                           crossover_type=crossover_type,
-                           crossover_probability=crossover_probability,
-                           mutation_type=mutation_type,
-                           mutation_probability=mutation_probability,
-                           save_best_solutions=True,
-                           on_generation=on_generation)
+    if k_coloring is None:
+        colorings = {
+            1: {
+                "coloring": {c: 1 for c in range(1, graph.number_of_nodes() + 1)},
+                "score": 0
+            },
+            graph.number_of_nodes(): {
+                "coloring": {c: c for c in range(1, graph.number_of_nodes() + 1)},
+                "score": 1
+            }
+        }
+    else:
+        colorings = {}
 
-    ga_instance.local_search_probability = 0.2
-    ga_instance.run()
-    ga_instance.plot_fitness()
-    final_solution_fitness = np.max(ga_instance.best_solutions_fitness)
-    final_solution_idx = np.argmax(ga_instance.best_solutions_fitness)
-    print(ga_instance.best_solutions[final_solution_idx], final_solution_fitness)
-    return {}
+    for k in (range(2, graph.number_of_nodes()) if k_coloring is None else [k_coloring]):
+        initial_population = _initial_population_generator(k if k is not None else graph.number_of_nodes(),
+                                                           solutions_per_pop,
+                                                           num_genes)
+        gene_space = {'low': 1, 'high': k if k is not None else graph.number_of_nodes()}
+
+        ga_instance = pygad.GA(num_generations=num_generations,
+                               num_parents_mating=num_parents_mating,
+                               keep_parents=keep_parents,
+                               initial_population=initial_population,
+                               gene_type=gene_type,
+                               gene_space=gene_space,
+                               fitness_func=_fitness_function_factory(graph),
+                               parent_selection_type=parent_selection_type,
+                               K_tournament=K_tournament,
+                               crossover_type=crossover_type,
+                               crossover_probability=crossover_probability,
+                               mutation_type=mutation_type,
+                               mutation_probability=mutation_probability,
+                               save_best_solutions=True,
+                               on_generation=on_generation)
+
+        ga_instance.local_search_probability = 0.2
+        ga_instance.run()
+        # ga_instance.plot_fitness()
+
+        final_solution_fitness = np.max(ga_instance.best_solutions_fitness)
+        final_solution_idx = np.argmax(ga_instance.best_solutions_fitness)
+        print(ga_instance.best_solutions[final_solution_idx], final_solution_fitness)
+
+        ga_result = {
+            "coloring": {idx + 1: val for idx, val in enumerate(ga_instance.best_solutions[final_solution_idx])},
+            "score": final_solution_fitness
+        }
+        if k_coloring is None:
+            colorings[k] = ga_result
+        else:
+            colorings = ga_result
+    return colorings
 
 
 def bruteforce_fuzzy_color(graph: nx.Graph):
@@ -325,5 +349,5 @@ def _build_example_graph_2() -> nx.Graph:
 
 
 if __name__ == '__main__':
-    # fuzzy_color(_build_example_graph_2(), 2)
-    fuzzy_color(_generate_fuzzy_graph(25, 0.25, 42), 3)
+    print(fuzzy_color(_build_example_graph_2(), None))
+    # fuzzy_color(_generate_fuzzy_graph(25, 0.25, 42), 3)
