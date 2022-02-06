@@ -88,8 +88,8 @@ def _incompatibility_elimination_crossover_factory(graph: nx.Graph):
                     ic_mask[default_rng().choice(np.where(ic_mask)[0])] = False
                     child1[ic_mask] = parent2[ic_mask]
                 for ic in incompatible_colors_parent2:
-                    ic_mask = (parent2 == ic)
-                    ic_mask[default_rng().choice(np.where(ic_mask)[0])] = False
+                    ic_mask = (child2 == ic)
+                    ic_mask[np.where(ic_mask)[0][-1]] = False
                     child2[ic_mask] = parent1[ic_mask]
 
             offspring = np.append(offspring, [child1], axis=0)
