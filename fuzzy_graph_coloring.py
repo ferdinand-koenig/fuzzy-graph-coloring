@@ -15,7 +15,7 @@ def main():
 
 
 def _y_ij(i: int, j: int, chromosome: tuple) -> bool:
-    return chromosome[i] == chromosome[j]
+    return chromosome[i-1] == chromosome[j-1]
 
 
 def _fitness_function_factory(graph: nx.Graph):
@@ -174,7 +174,7 @@ def fuzzy_color(graph: nx.Graph, k: int = None):
                            mutation_probability=mutation_probability)
 
     print("initial population:")
-    print(ga_instance.initial_population)
+    print(ga_instance.initial_population[:10])
     ga_instance.run()
     ga_instance.plot_fitness()
     solution, solution_fitness, solution_idx = ga_instance.best_solution()
