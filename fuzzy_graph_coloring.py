@@ -89,7 +89,7 @@ def _incompatibility_elimination_crossover_factory(graph: nx.Graph):
                     child1[ic_mask] = parent2[ic_mask]
                 for ic in incompatible_colors_parent2:
                     ic_mask = (child2 == ic)
-                    ic_mask[np.where(ic_mask)[0][-1]] = False
+                    ic_mask[default_rng().choice(np.where(ic_mask)[0])] = False
                     child2[ic_mask] = parent1[ic_mask]
 
             offspring = np.append(offspring, [child1], axis=0)
@@ -209,7 +209,7 @@ def fuzzy_color(graph: nx.Graph, k: int = None):
                            save_best_solutions=True,
                            on_generation=on_generation)
 
-    ga_instance.local_search_probability = 0.2
+    ga_instance.local_search_probability = 0.1
     ga_instance.run()
     ga_instance.plot_fitness()
     final_solution_fitness = np.max(ga_instance.best_solutions_fitness)
@@ -326,4 +326,4 @@ def _build_example_graph_2() -> nx.Graph:
 
 if __name__ == '__main__':
     # fuzzy_color(_build_example_graph_2(), 2)
-    fuzzy_color(_generate_fuzzy_graph(25, 0.25, 42), 3)
+    fuzzy_color(_generate_fuzzy_graph(10, 0.25, 42), 10)
