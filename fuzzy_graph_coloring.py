@@ -15,7 +15,7 @@ def main():
 
 
 def _y_ij(i: int, j: int, chromosome: tuple) -> bool:
-    return chromosome[i-1] == chromosome[j-1]
+    return chromosome[i - 1] == chromosome[j - 1]
 
 
 def _fitness_function_factory(graph: nx.Graph):
@@ -56,7 +56,10 @@ def _incompatibility_elimination_crossover_factory(graph: nx.Graph):
         :param ga_instance: Instance of the pygad.GA class
         :return: offspring
         """
-        assert parents.size == offspring_size[0]
+        print(f"len(parents): {len(parents)}")
+        print(f"offspring_size: {offspring_size}")
+        print(f"ga_instance.sol_per_pop: {ga_instance.sol_per_pop}")
+        assert len(parents) == offspring_size[0]
         assert offspring_size[0] == ga_instance.sol_per_pop
 
         idx = 0
@@ -141,8 +144,9 @@ def _initial_population_generator(k: int, sol_per_pop: int, num_genes: int):
 
 def fuzzy_color(graph: nx.Graph, k: int = None):
     num_generations = 15
-    solutions_per_pop = 100
+    solutions_per_pop = 100  # solutions_per_pop = offspring_size + keep_parents
     num_parents_mating = solutions_per_pop
+    keep_parents = 0
     num_genes = graph.number_of_nodes()
     initial_population = _initial_population_generator(k if k is not None else graph.number_of_nodes(),
                                                        solutions_per_pop,
@@ -162,6 +166,7 @@ def fuzzy_color(graph: nx.Graph, k: int = None):
 
     ga_instance = pygad.GA(num_generations=num_generations,
                            num_parents_mating=num_parents_mating,
+                           keep_parents=keep_parents,
                            initial_population=initial_population,
                            gene_type=gene_type,
                            gene_space=gene_space,
@@ -271,5 +276,24 @@ def _build_example_graph_1() -> nx.Graph:
     return TG1
 
 
+def _build_example_graph_2() -> nx.Graph:
+    TG2 = nx.Graph()
+    TG2.add_edge(1, 2, weight=0.4)
+    TG2.add_edge(1, 3, weight=0.7)
+    TG2.add_edge(1, 4, weight=0.8)
+    TG2.add_edge(2, 4, weight=0.2)
+    TG2.add_edge(2, 5, weight=0.9)
+    TG2.add_edge(3, 4, weight=0.3)
+    TG2.add_edge(3, 6, weight=1.0)
+    TG2.add_edge(4, 5, weight=0.3)
+    TG2.add_edge(4, 6, weight=0.5)
+    TG2.add_edge(5, 6, weight=0.7)
+    TG2.add_edge(5, 7, weight=0.8)
+    TG2.add_edge(5, 8, weight=0.5)
+    TG2.add_edge(6, 7, weight=0.7)
+    TG2.add_edge(7, 8, weight=0.6)
+    return TG2
+
+
 if __name__ == '__main__':
-    fuzzy_color(_build_example_graph_1(), 2)
+    fuzzy_color(_build_example_graph_2(), 2)
