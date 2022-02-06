@@ -1,5 +1,6 @@
 __version__ = "0.1.0"
 
+import datetime
 import itertools
 
 import matplotlib.pyplot as plt
@@ -56,9 +57,6 @@ def _incompatibility_elimination_crossover_factory(graph: nx.Graph):
         :param ga_instance: Instance of the pygad.GA class
         :return: offspring
         """
-        print(f"len(parents): {len(parents)}")
-        print(f"offspring_size: {offspring_size}")
-        print(f"ga_instance.sol_per_pop: {ga_instance.sol_per_pop}")
         # assert len(parents) == offspring_size[0]
         # assert offspring_size[0] == ga_instance.sol_per_pop
 
@@ -153,10 +151,11 @@ def _local_search(chromosome: np.array, ga_instance) -> np.array:
     k = np.max(chromosome)
     best = ([], 0)
     for idx in range(len(chromosome)):
+        if (chromosome == chromosome[idx]).sum() == 1:
+            continue
+        assert (chromosome == chromosome[idx]).sum() != 0
         temp_chromosome = chromosome.copy()
         for color in range(1, k+1):
-            if (temp_chromosome == color).sum() == 1:
-                continue
             temp_chromosome[idx] = color
             temp_fitness = ga_instance.fitness_func(temp_chromosome, 0)
             if temp_fitness > best[1]:
@@ -165,6 +164,7 @@ def _local_search(chromosome: np.array, ga_instance) -> np.array:
 
 
 def on_generation(ga_instance):
+    print("almost done", ga_instance.generations_completed, datetime.datetime.now().strftime("%H:%M:%S.%f"))
     if not ga_instance.local_search_probability > 0:
         return
     for idx, chromosome in enumerate(ga_instance.population):
@@ -349,5 +349,5 @@ def _build_example_graph_2() -> nx.Graph:
 
 
 if __name__ == '__main__':
-    print(fuzzy_color(_build_example_graph_2(), 5))
+    print(fuzzy_color(_build_example_graph_2(), None))
     # fuzzy_color(_generate_fuzzy_graph(25, 0.25, 42), 3)
