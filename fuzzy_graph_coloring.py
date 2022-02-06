@@ -94,9 +94,6 @@ def _incompatibility_elimination_crossover_factory(graph: nx.Graph):
 
             offspring = np.append(offspring, [child1], axis=0)
             offspring = np.append(offspring, [child2], axis=0)
-            print(child1, child2)
-            print(np.max(child1), len(np.unique(child1)))
-            print(np.max(child2), len(np.unique(child2)))
             assert np.max(child1) == len(np.unique(child1))
             assert np.max(child2) == len(np.unique(child2))
             idx += 1
@@ -157,8 +154,10 @@ def _local_search(chromosome: np.array, ga_instance) -> np.array:
     best = ([], 0)
     for idx in range(len(chromosome)):
         temp_chromosome = chromosome.copy()
-        for color in range(k):
-            temp_chromosome[idx] = color + 1
+        for color in range(1, k+1):
+            if (temp_chromosome == color).sum() == 1:
+                continue
+            temp_chromosome[idx] = color
             temp_fitness = ga_instance.fitness_func(temp_chromosome, 0)
             if temp_fitness > best[1]:
                 best = (temp_chromosome, temp_fitness)
@@ -350,5 +349,5 @@ def _build_example_graph_2() -> nx.Graph:
 
 
 if __name__ == '__main__':
-    print(fuzzy_color(_build_example_graph_2(), 4))
+    print(fuzzy_color(_build_example_graph_2(), 5))
     # fuzzy_color(_generate_fuzzy_graph(25, 0.25, 42), 3)
