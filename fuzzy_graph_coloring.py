@@ -71,7 +71,7 @@ def _incompatibility_elimination_crossover_factory(graph: nx.Graph):
             child1 = np.copy(parent1)
             child2 = np.copy(parent2)
 
-            if random.random() <= ga_instance.crossover_probability:
+            if random.random() <= ga_instance.crossover_probability and ga_instance.crossover_probability > 0:
                 # Get incompatible colors...
                 incompatible_colors_parent1 = []
                 incompatible_colors_parent2 = []
@@ -111,7 +111,8 @@ def _color_transposition_mutation(offspring, ga_instance):
     """
     mutation_offspring = np.empty((0, offspring.shape[1]), int)
     for chromosome in offspring:
-        if random.random() <= ga_instance.mutation_probability:  # for each chromosome, there is a chance to be mutated
+        if random.random() <= ga_instance.mutation_probability and ga_instance.mutation_probability > 0:
+            # for each chromosome, there is a chance to be mutated
             color_a, color_b = default_rng().choice(np.unique(chromosome), size=2,
                                                     replace=False)  # take 2 different colors
             # swap those colors
@@ -145,13 +146,26 @@ def _initial_population_generator(k: int, sol_per_pop: int, num_genes: int):
     return initial_population
 
 
+def _local_search(chromosome: np.array, ga_instance) -> np.array:
+    k = np.max(chromosome)
+    best = ([], 0)
+    for idx in range(len(chromosome)):
+        temp_chromosome = chromosome.copy()
+        for color in range(k):
+            temp_chromosome[idx] = color + 1
+            temp_fitness = ga_instance.fitness_func(temp_chromosome, 0)
+            if temp_fitness > best[1]:
+                best = (temp_chromosome, temp_fitness)
+    return best[0]
+
+
 def on_generation(ga_instance):
-    for chromosome in ga_instance.population:
+    if not ga_instance.local_search_probability > 0:
+        return
+    for idx, chromosome in enumerate(ga_instance.population):
         if random.random() <= ga_instance.local_search_probability:
-            print("on_generation()")
-            # print(ga_instance.population)
-            print(ga_instance.local_search_probability)
-            ga_instance.population[-1] = np.array([1, 2, 1, 2, 1, 2, 1, 2])
+            new_chromosome = _local_search(chromosome, ga_instance)
+            ga_instance.population[idx] = new_chromosome
 
 
 def fuzzy_color(graph: nx.Graph, k: int = None):
