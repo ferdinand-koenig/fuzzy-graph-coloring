@@ -59,8 +59,8 @@ def _incompatibility_elimination_crossover_factory(graph: nx.Graph):
         print(f"len(parents): {len(parents)}")
         print(f"offspring_size: {offspring_size}")
         print(f"ga_instance.sol_per_pop: {ga_instance.sol_per_pop}")
-        assert len(parents) == offspring_size[0]
-        assert offspring_size[0] == ga_instance.sol_per_pop
+        # assert len(parents) == offspring_size[0]
+        # assert offspring_size[0] == ga_instance.sol_per_pop
 
         idx = 0
         offspring = np.empty((0, parents.shape[1]), int)
@@ -146,7 +146,7 @@ def fuzzy_color(graph: nx.Graph, k: int = None):
     num_generations = 15
     solutions_per_pop = 100  # solutions_per_pop = offspring_size + keep_parents
     num_parents_mating = solutions_per_pop
-    keep_parents = 0
+    keep_parents = 50
     num_genes = graph.number_of_nodes()
     initial_population = _initial_population_generator(k if k is not None else graph.number_of_nodes(),
                                                        solutions_per_pop,
@@ -156,7 +156,7 @@ def fuzzy_color(graph: nx.Graph, k: int = None):
     gene_space = {'low': 1, 'high': k if k is not None else graph.number_of_nodes()}
 
     parent_selection_type = "tournament"
-    K_tournament = 5
+    K_tournament = 10
 
     crossover_type = _incompatibility_elimination_crossover_factory(graph)
     crossover_probability = 0.8
@@ -296,4 +296,5 @@ def _build_example_graph_2() -> nx.Graph:
 
 
 if __name__ == '__main__':
-    fuzzy_color(_build_example_graph_2(), 2)
+    # fuzzy_color(_build_example_graph_2(), 2)
+    fuzzy_color(_generate_fuzzy_graph(1000, 0.25, 42), 6)
