@@ -67,26 +67,30 @@ def _incompatibility_elimination_crossover_factory(graph: nx.Graph):
         while len(offspring) != offspring_size[0]:
             parent1 = parents[idx % parents.shape[0], :].copy()
             parent2 = parents[(idx + 1) % parents.shape[0], :].copy()
-            # Get incompatible colors...
-            incompatible_colors_parent1 = []
-            incompatible_colors_parent2 = []
-            for (i, j) in graph.edges():
-                if _y_ij(i, j, parent1):  # if incompatible
-                    incompatible_colors_parent1.append(parent1[i])  # add the color to list of incompatible colors
-                if _y_ij(i, j, parent2):
-                    incompatible_colors_parent2.append(parent2[i])
 
-            # ... and exchange with the colors of other parent except for a random appearance
             child1 = np.copy(parent1)
             child2 = np.copy(parent2)
-            for ic in incompatible_colors_parent1:
-                ic_mask = (parent1 == ic)
-                ic_mask[default_rng().choice(np.where(ic_mask)[0])] = False
-                child1[ic_mask] = parent2[ic_mask]
-            for ic in incompatible_colors_parent2:
-                ic_mask = (parent2 == ic)
-                ic_mask[default_rng().choice(np.where(ic_mask)[0])] = False
-                child2[ic_mask] = parent1[ic_mask]
+
+            if random.random() <= ga_instance.crossover_probability:
+                # Get incompatible colors...
+                incompatible_colors_parent1 = []
+                incompatible_colors_parent2 = []
+                for (i, j) in graph.edges():
+                    if _y_ij(i, j, parent1):  # if incompatible
+                        incompatible_colors_parent1.append(parent1[i])  # add the color to list of incompatible colors
+                    if _y_ij(i, j, parent2):
+                        incompatible_colors_parent2.append(parent2[i])
+
+                # ... and exchange with the colors of other parent except for a random appearance
+
+                for ic in incompatible_colors_parent1:
+                    ic_mask = (parent1 == ic)
+                    ic_mask[default_rng().choice(np.where(ic_mask)[0])] = False
+                    child1[ic_mask] = parent2[ic_mask]
+                for ic in incompatible_colors_parent2:
+                    ic_mask = (parent2 == ic)
+                    ic_mask[default_rng().choice(np.where(ic_mask)[0])] = False
+                    child2[ic_mask] = parent1[ic_mask]
 
             offspring = np.append(offspring, [child1], axis=0)
             offspring = np.append(offspring, [child2], axis=0)
@@ -99,7 +103,7 @@ def _incompatibility_elimination_crossover_factory(graph: nx.Graph):
 
 def _color_transposition_mutation(offspring, ga_instance):
     """
-    Randomly selects two colors and switches them mutually.
+    CTM. Randomly selects two colors and switches them mutually.
     The chance that the mutation operator is applied to a chromosome is given by the mutation probability.
     :param offspring: The offspring to be mutated
     :param ga_instance: Instance of the pygad.GA class
@@ -295,5 +299,5 @@ def _build_example_graph_2() -> nx.Graph:
 
 
 if __name__ == '__main__':
-    # fuzzy_color(_build_example_graph_2(), 2)
-    fuzzy_color(_generate_fuzzy_graph(1000, 0.25, 42), 6)
+    fuzzy_color(_build_example_graph_2(), 2)
+    # fuzzy_color(_generate_fuzzy_graph(1000, 0.25, 42), 6)
