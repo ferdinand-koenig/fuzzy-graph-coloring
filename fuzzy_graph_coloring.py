@@ -174,6 +174,12 @@ def on_generation(ga_instance):
 
 
 def fuzzy_color(graph: nx.Graph, k_coloring: int = None):
+    """
+    Hallo
+    :param graph:
+    :param k_coloring:
+    :return:
+    """
     num_generations = 15
     solutions_per_pop = 100  # solutions_per_pop = offspring_size + keep_parents
     num_parents_mating = solutions_per_pop
