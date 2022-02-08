@@ -71,9 +71,10 @@ def _incompatibility_elimination_crossover_factory(graph: nx.Graph):
                 incompatible_colors_parent2 = []
                 for (i, j) in graph.edges():
                     if _y_ij(i, j, parent1):  # if incompatible
-                        incompatible_colors_parent1.append(parent1[i])  # add the color to list of incompatible colors
+                        incompatible_colors_parent1.append(
+                            parent1[i - 1])  # add the color to list of incompatible colors
                     if _y_ij(i, j, parent2):
-                        incompatible_colors_parent2.append(parent2[i])
+                        incompatible_colors_parent2.append(parent2[i - 1])
 
                 # ... and exchange with the colors of other parent except for a random appearance
 
