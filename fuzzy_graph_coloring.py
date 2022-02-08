@@ -180,9 +180,28 @@ def _on_stop(ga_instance, last_population_fitness):
         _log(f"Total elapsed time is {str(total_elapsed_time)[2:-4]}")
 
 
-def fuzzy_color(graph: nx.Graph, k_coloring: int = None, verbose: bool = False, local_search_probability: float = 0.2,
+def fuzzy_color(graph: nx.Graph, k: int = None, verbose: bool = False, local_search_probability: float = 0.2,
                 crossover_probability: float = 0.8, mutation_probability: float = 0.3, num_generations: int = 15,
-                solutions_per_pop: int = 100):
+                solutions_per_pop: int = 100) -> dict:
+    """
+    Calculates the fuzzy coloring of a graph with fuzzy edges by leveraging genetic algorithms.
+    Selected parameters can be adjusted. In this context, a chromosome is a feasible solution.
+
+    :param graph: A NetworkX graph
+    :param k: Defaults to None. Then, all possible colorings are calculated.
+        If an integer is given, the k-coloring is calculated and returned.
+    :param verbose: Gives additional information in console.
+    :param local_search_probability: The probability of the execution of a local search. Searches the local space around
+        chromosome for a better solution. Takes longer with higher probability but yields better results.
+    :param crossover_probability: The probability of Crossover of two parent chromosomes. Opposite case is to copy
+        the parents into the offspring.
+    :param mutation_probability: Gives the probability of mutating a chromosome
+    :param num_generations: How many generations will be used to find optimal coloring
+    :param solutions_per_pop: How many chromosomes exist per generation
+    :return: Returns a dictionary with the keys 'coloring' and 'score' which are the mapping from nodes to colors and
+        the associated fitness or quality.
+        If k is not set, a nested dictionary with the extra level of keys k in (1, ..., n [number of nodes]) is returned
+    """
     start_time = datetime.datetime.now()
 
     num_generations = num_generations
@@ -207,7 +226,7 @@ def fuzzy_color(graph: nx.Graph, k_coloring: int = None, verbose: bool = False, 
         _log(f"mutation_probability = {mutation_probability}")
         _log(f"local_search_probability = {local_search_probability}")
 
-    if k_coloring is None:
+    if k is None:
         colorings = {
             1: {
                 "coloring": {c: 1 for c in range(1, graph.number_of_nodes() + 1)},
@@ -221,13 +240,13 @@ def fuzzy_color(graph: nx.Graph, k_coloring: int = None, verbose: bool = False, 
     else:
         colorings = {}
 
-    for k in (range(2, graph.number_of_nodes()) if k_coloring is None else [k_coloring]):
+    for _k in (range(2, graph.number_of_nodes()) if k is None else [k]):
         if verbose:
-            _log(f"Starting Genetic Algorithm for k = {k}")
-        initial_population = _initial_population_generator(k if k is not None else graph.number_of_nodes(),
+            _log(f"Starting Genetic Algorithm for k = {_k}")
+        initial_population = _initial_population_generator(_k if _k is not None else graph.number_of_nodes(),
                                                            solutions_per_pop,
                                                            num_genes)
-        gene_space = {'low': 1, 'high': k if k is not None else graph.number_of_nodes()}
+        gene_space = {'low': 1, 'high': _k if _k is not None else graph.number_of_nodes()}
 
         ga_instance = pygad.GA(num_generations=num_generations,
                                num_parents_mating=num_parents_mating,
@@ -260,14 +279,14 @@ def fuzzy_color(graph: nx.Graph, k_coloring: int = None, verbose: bool = False, 
             "coloring": {idx + 1: val for idx, val in enumerate(ga_instance.best_solutions[final_solution_idx])},
             "score": final_solution_fitness
         }
-        if k_coloring is None:
-            colorings[k] = ga_result
+        if k is None:
+            colorings[_k] = ga_result
         else:
             colorings = ga_result
     return colorings
 
 
-def bruteforce_fuzzy_color(graph: nx.Graph):
+def bruteforce_fuzzy_color(graph: nx.Graph) -> dict:
     """
     Finds the minimal k-coloring for a fuzzy graph by bruteforce all possible color assignments.
     Excludes the cases k=1 and k=number of nodes since the degree of total incompatibility is 1 and 0.
@@ -326,7 +345,7 @@ def is_fuzzy_graph(graph: nx.Graph) -> bool:
     Check if edges have the weight attribute and hold a numeric value < 0 and >= 1.
 
     :param graph: NetworkX graph
-    :return: Bool if graph is fuzzy
+    :return: Bool: graph is fuzzy
     """
     weights = nx.get_edge_attributes(graph, "weight")
     if not weights:
