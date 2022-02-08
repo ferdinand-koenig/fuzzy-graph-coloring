@@ -205,6 +205,10 @@ def fuzzy_color(graph: nx.Graph, k: int = None, verbose: bool = False, local_sea
         the associated fitness or quality.
         If k is not set, a nested dictionary with the extra level of keys k in (1, ..., n [number of nodes]) is returned
     """
+    if not is_fuzzy_graph(graph):
+        graph = transform_to_fuzzy_graph(graph)
+    graph, mapping = _relabel_input_graph(graph)
+
     start_time = datetime.datetime.now()
 
     num_generations = num_generations
@@ -232,11 +236,11 @@ def fuzzy_color(graph: nx.Graph, k: int = None, verbose: bool = False, local_sea
     if k is None:
         colorings = {
             1: {
-                "coloring": {c: 1 for c in range(1, graph.number_of_nodes() + 1)},
+                "coloring": {mapping.get(c): 1 for c in range(1, graph.number_of_nodes() + 1)},
                 "score": 0
             },
             graph.number_of_nodes(): {
-                "coloring": {c: c for c in range(1, graph.number_of_nodes() + 1)},
+                "coloring": {mapping.get(c): c for c in range(1, graph.number_of_nodes() + 1)},
                 "score": 1
             }
         }
@@ -279,7 +283,9 @@ def fuzzy_color(graph: nx.Graph, k: int = None, verbose: bool = False, local_sea
         final_solution_idx = np.argmax(ga_instance.best_solutions_fitness)
 
         ga_result = {
-            "coloring": {idx + 1: val for idx, val in enumerate(ga_instance.best_solutions[final_solution_idx])},
+            "coloring": {
+                mapping.get(idx+1): val for idx, val in enumerate(ga_instance.best_solutions[final_solution_idx])
+            },
             "score": final_solution_fitness
         }
         if k is None:
