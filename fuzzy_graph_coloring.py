@@ -500,5 +500,5 @@ def _log(message: str):
 
 if __name__ == '__main__':
     coloring, _ = fuzzy_color(_build_example_graph_1(), 3)
-    print(coloring)
+    print(fuzzy_color(_build_example_graph_1(), 3))
     # fuzzy_color(_generate_fuzzy_graph(20, 0.25, 42), None, verbose=True)

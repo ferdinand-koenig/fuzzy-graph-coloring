@@ -10,4 +10,7 @@
 ```poetry run pre-commit run --all-files```
 
 ## run pytest
-````poetry run pytest .\tests\````
+```poetry run pytest .\tests\```
+
+## create documentation
+```.\docs\make html```
