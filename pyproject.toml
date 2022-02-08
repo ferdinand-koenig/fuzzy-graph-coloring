@@ -2,7 +2,10 @@
 name = "fuzzy-graph-coloring"
 version = "0.1.0"
 description = ""
-authors = ["Jonas Rheiner <39375864+jrheiner@users.noreply.github.com>"]
+authors = [
+    "Ferdinand Koenig",
+    "Jonas Rheiner"
+]
 packages = [
     { include = "fuzzy_graph_coloring.py" },
 ]
