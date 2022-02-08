@@ -12,6 +12,13 @@ from numpy.random import default_rng
 
 
 def _y_ij(i: int, j: int, chromosome: tuple) -> bool:
+    """
+    Function to determine if vertices i and j are assigned color.
+    :param i: Vertex
+    :param j: Vertex
+    :param chromosome: Color assignment
+    :return: Boolean
+    """
     return chromosome[i - 1] == chromosome[j - 1]
 
 
@@ -144,6 +151,12 @@ def _initial_population_generator(k: int, sol_per_pop: int, num_genes: int):
 
 
 def _local_search(chromosome: np.array, ga_instance) -> np.array:
+    """
+    Implements a local search procedure. Depends on the local_search_probability parameter.
+    :param chromosome: Color assignment
+    :param ga_instance: Instance of the Genetic Algorithm
+    :return: Returns the color assignment with the best fitness as result
+    """
     k = np.max(chromosome)
     best = ([], 0)
     for idx in range(len(chromosome)):
@@ -160,6 +173,11 @@ def _local_search(chromosome: np.array, ga_instance) -> np.array:
 
 
 def _on_generation(ga_instance):
+    """
+    Genetic Algorithm callback before the end of each generation.
+    :param ga_instance: Instance of the Genetic Algorithm
+    :return: None
+    """
     if ga_instance.local_search_probability > 0:
         for idx, chromosome in enumerate(ga_instance.population):
             if random.random() <= ga_instance.local_search_probability:
@@ -171,10 +189,21 @@ def _on_generation(ga_instance):
 
 
 def _on_start(ga_instance):
+    """
+    Genetic Algorithm callback at the start of each generation.
+    :param ga_instance: Instance of the Genetic Algorithm
+    :return: None
+    """
     ga_instance.instance_start_time = datetime.datetime.now()
 
 
 def _on_stop(ga_instance, last_population_fitness):
+    """
+    Genetic Algorithm callback at the end of each generation.
+    :param ga_instance: Instance of the Genetic Algorithm
+    :param last_population_fitness: Fitness values of the last population
+    :return: None
+    """
     if ga_instance.verbose:
         total_elapsed_time = datetime.datetime.now() - ga_instance.start_time
         _log(f"Total elapsed time is {str(total_elapsed_time)[2:-4]}")
@@ -393,6 +422,11 @@ def _build_example_graph_2() -> nx.Graph:
 
 
 def _log(message: str):
+    """
+    Print message with timestamp
+    :param message: Message to print
+    :return: None
+    """
     print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] {message}")
 
 
