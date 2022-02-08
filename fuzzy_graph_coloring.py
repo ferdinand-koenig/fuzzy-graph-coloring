@@ -1,5 +1,6 @@
 __version__ = "0.1.0"
 
+import copy
 import datetime
 import itertools
 
@@ -9,6 +10,7 @@ import numpy as np
 import pygad
 import random
 from numpy.random import default_rng
+from typing import Tuple
 
 
 def _y_ij(i: int, j: int, chromosome: tuple) -> bool:
@@ -340,7 +342,7 @@ def is_fuzzy_graph(graph: nx.Graph) -> bool:
     return True
 
 
-def transform_to_fuzzy_graph(graph: nx.Graph) -> nx.Graph:
+def transform_to_fuzzy_graph(input_graph: nx.Graph) -> nx.Graph:
     """
     Transforms an input graph to a fuzzy graph by setting the edge attribute weight.
     Crisp edges have the weight 1. If some edges already have a weight attribute,
@@ -348,6 +350,7 @@ def transform_to_fuzzy_graph(graph: nx.Graph) -> nx.Graph:
     :param graph: NetworkX graph
     :return: NetworkX graph with a valid edge attribute weight
     """
+    graph = copy.deepcopy(input_graph)
     weights = nx.get_edge_attributes(graph, "weight")
     if not weights:
         nx.set_edge_attributes(graph, 1, "weight")
@@ -360,6 +363,19 @@ def transform_to_fuzzy_graph(graph: nx.Graph) -> nx.Graph:
             except KeyError:
                 graph[u][v]["weight"] = 1
     return graph
+
+
+def _relabel_input_graph(graph: nx.Graph) -> Tuple[nx.Graph, dict]:
+    """
+    Relabels an input graph to use consecutive integers as node labels.
+    Returns a copy and the new mapping which can be used to revert the relabeling.
+
+    :param graph: NetworkX graph
+    :return: Relabeled Graph, mapping
+    """
+    mapping = {new + 1: old for new, old in enumerate(graph.nodes())}
+    int_node_graph = nx.relabel_nodes(graph, mapping={old: new + 1 for new, old in enumerate(graph.nodes())}, copy=True)
+    return int_node_graph, mapping
 
 
 def _build_example_graph_1() -> nx.Graph:
