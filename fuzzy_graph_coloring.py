@@ -151,7 +151,7 @@ def _local_search(chromosome: np.array, ga_instance) -> np.array:
             continue
         assert (chromosome == chromosome[idx]).sum() != 0
         temp_chromosome = chromosome.copy()
-        for color in range(1, k+1):
+        for color in range(1, k + 1):
             temp_chromosome[idx] = color
             temp_fitness = ga_instance.fitness_func(temp_chromosome, 0)
             if temp_fitness > best[1]:
@@ -159,23 +159,36 @@ def _local_search(chromosome: np.array, ga_instance) -> np.array:
     return best[0]
 
 
-def on_generation(ga_instance):
-    print("almost done", ga_instance.generations_completed, datetime.datetime.now().strftime("%H:%M:%S.%f"))
-    if not ga_instance.local_search_probability > 0:
-        return
-    for idx, chromosome in enumerate(ga_instance.population):
-        if random.random() <= ga_instance.local_search_probability:
-            new_chromosome = _local_search(chromosome, ga_instance)
-            ga_instance.population[idx] = new_chromosome
+def _on_generation(ga_instance):
+    if ga_instance.local_search_probability > 0:
+        for idx, chromosome in enumerate(ga_instance.population):
+            if random.random() <= ga_instance.local_search_probability:
+                new_chromosome = _local_search(chromosome, ga_instance)
+                ga_instance.population[idx] = new_chromosome
+    if ga_instance.verbose and ga_instance.generations_completed == 1:
+        first_gen_time = datetime.datetime.now() - ga_instance.instance_start_time
+        _log(f"First generation took {str(first_gen_time)[2:-4]}")
+
+
+def _on_start(ga_instance):
+    ga_instance.instance_start_time = datetime.datetime.now()
+
+
+def _on_stop(ga_instance, last_population_fitness):
+    if ga_instance.verbose:
+        total_elapsed_time = datetime.datetime.now() - ga_instance.start_time
+        _log(f"Total elapsed time is {str(total_elapsed_time)[2:-4]}")
 
 
 def fuzzy_color(graph: nx.Graph, k_coloring: int = None, verbose: bool = False, local_search_probability: float = 0.2,
                 crossover_probability: float = 0.8, mutation_probability: float = 0.3, num_generations: int = 15,
                 solutions_per_pop: int = 100):
+    start_time = datetime.datetime.now()
+
     num_generations = num_generations
     solutions_per_pop = solutions_per_pop  # solutions_per_pop = offspring_size + keep_parents
     num_parents_mating = solutions_per_pop
-    keep_parents = solutions_per_pop / 2
+    keep_parents = int(solutions_per_pop / 2)
     num_genes = graph.number_of_nodes()
     gene_type = int
     parent_selection_type = "tournament"
@@ -184,6 +197,15 @@ def fuzzy_color(graph: nx.Graph, k_coloring: int = None, verbose: bool = False, 
     crossover_probability = crossover_probability
     mutation_type = _color_transposition_mutation
     mutation_probability = mutation_probability
+
+    if verbose:
+        _log(f"Input graph has {graph.number_of_nodes()} vertices and {graph.number_of_edges()} edges")
+        _log("Genetic Algorithm parameters:")
+        _log(f"num_generations = {num_generations}")
+        _log(f"solutions_per_pop = {solutions_per_pop}")
+        _log(f"crossover_probability = {crossover_probability}")
+        _log(f"mutation_probability = {mutation_probability}")
+        _log(f"local_search_probability = {local_search_probability}")
 
     if k_coloring is None:
         colorings = {
@@ -200,6 +222,8 @@ def fuzzy_color(graph: nx.Graph, k_coloring: int = None, verbose: bool = False, 
         colorings = {}
 
     for k in (range(2, graph.number_of_nodes()) if k_coloring is None else [k_coloring]):
+        if verbose:
+            _log(f"Starting Genetic Algorithm for k = {k}")
         initial_population = _initial_population_generator(k if k is not None else graph.number_of_nodes(),
                                                            solutions_per_pop,
                                                            num_genes)
@@ -219,9 +243,14 @@ def fuzzy_color(graph: nx.Graph, k_coloring: int = None, verbose: bool = False, 
                                mutation_type=mutation_type,
                                mutation_probability=mutation_probability,
                                save_best_solutions=True,
-                               on_generation=on_generation)
+                               on_generation=_on_generation,
+                               on_start=_on_start,
+                               on_stop=_on_stop,
+                               stop_criteria=["reach_1"])
 
         ga_instance.local_search_probability = local_search_probability
+        ga_instance.verbose = verbose
+        ga_instance.start_time = start_time
         ga_instance.run()
 
         final_solution_fitness = np.max(ga_instance.best_solutions_fitness)
@@ -344,6 +373,10 @@ def _build_example_graph_2() -> nx.Graph:
     return TG2
 
 
+def _log(message: str):
+    print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] {message}")
+
+
 if __name__ == '__main__':
-    print(fuzzy_color(_build_example_graph_2(), None))
-    # fuzzy_color(_generate_fuzzy_graph(25, 0.25, 42), 3)
+    print(fuzzy_color(_build_example_graph_2(), None, verbose=True))
+    # fuzzy_color(_generate_fuzzy_graph(20, 0.25, 42), None, verbose=True)
