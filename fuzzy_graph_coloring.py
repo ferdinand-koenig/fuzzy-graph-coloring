@@ -11,10 +11,6 @@ import random
 from numpy.random import default_rng
 
 
-def main():
-    print("Hello World")
-
-
 def _y_ij(i: int, j: int, chromosome: tuple) -> bool:
     return chromosome[i - 1] == chromosome[j - 1]
 
@@ -173,19 +169,21 @@ def on_generation(ga_instance):
             ga_instance.population[idx] = new_chromosome
 
 
-def fuzzy_color(graph: nx.Graph, k_coloring: int = None):
-    num_generations = 15
-    solutions_per_pop = 100  # solutions_per_pop = offspring_size + keep_parents
+def fuzzy_color(graph: nx.Graph, k_coloring: int = None, verbose: bool = False, local_search_probability: float = 0.2,
+                crossover_probability: float = 0.8, mutation_probability: float = 0.3, num_generations: int = 15,
+                solutions_per_pop: int = 100):
+    num_generations = num_generations
+    solutions_per_pop = solutions_per_pop  # solutions_per_pop = offspring_size + keep_parents
     num_parents_mating = solutions_per_pop
-    keep_parents = 50
+    keep_parents = solutions_per_pop / 2
     num_genes = graph.number_of_nodes()
     gene_type = int
     parent_selection_type = "tournament"
     K_tournament = 10
     crossover_type = _incompatibility_elimination_crossover_factory(graph)
-    crossover_probability = 0.8
+    crossover_probability = crossover_probability
     mutation_type = _color_transposition_mutation
-    mutation_probability = 0.3
+    mutation_probability = mutation_probability
 
     if k_coloring is None:
         colorings = {
@@ -223,13 +221,11 @@ def fuzzy_color(graph: nx.Graph, k_coloring: int = None):
                                save_best_solutions=True,
                                on_generation=on_generation)
 
-        ga_instance.local_search_probability = 0.2
+        ga_instance.local_search_probability = local_search_probability
         ga_instance.run()
-        # ga_instance.plot_fitness()
 
         final_solution_fitness = np.max(ga_instance.best_solutions_fitness)
         final_solution_idx = np.argmax(ga_instance.best_solutions_fitness)
-        print(ga_instance.best_solutions[final_solution_idx], final_solution_fitness)
 
         ga_result = {
             "coloring": {idx + 1: val for idx, val in enumerate(ga_instance.best_solutions[final_solution_idx])},
