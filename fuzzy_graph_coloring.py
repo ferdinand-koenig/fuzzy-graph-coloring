@@ -330,7 +330,7 @@ def is_fuzzy_graph(graph: nx.Graph) -> bool:
     :return: Bool if graph is fuzzy
     """
     weights = nx.get_edge_attributes(graph, "weight")
-    if not weights:
+    if not weights or len(weights) < graph.number_of_nodes():
         return False
     else:
         for weight in weights.values():
@@ -338,6 +338,28 @@ def is_fuzzy_graph(graph: nx.Graph) -> bool:
                 print(weight)
                 return False
     return True
+
+
+def transform_to_fuzzy_graph(graph: nx.Graph) -> nx.Graph:
+    """
+    Transforms an input graph to a fuzzy graph by setting the edge attribute weight.
+    Crisp edges have the weight 1. If some edges already have a weight attribute,
+    the weight 1 is added to all remaining crisp edges.
+    :param graph: NetworkX graph
+    :return: NetworkX graph with a valid edge attribute weight
+    """
+    weights = nx.get_edge_attributes(graph, "weight")
+    if not weights:
+        nx.set_edge_attributes(graph, 1, "weight")
+    else:
+        for (u, v) in graph.edges():
+            try:
+                weight = graph[u][v]["weight"]
+                if not 0 < weight <= 1:
+                    raise Exception(f"Input graph has invalid weight attribute {weight} for edge ({u},{v})")
+            except KeyError:
+                graph[u][v]["weight"] = 1
+    return graph
 
 
 def _build_example_graph_1() -> nx.Graph:
@@ -372,6 +394,31 @@ def _build_example_graph_2() -> nx.Graph:
     TG2.add_edge(6, 7, weight=0.7)
     TG2.add_edge(7, 8, weight=0.6)
     return TG2
+
+
+def _build_example_crisp_graph() -> nx.Graph:
+    CG = nx.Graph()
+    CG.add_edge(1, 2)
+    CG.add_edge(1, 3)
+    CG.add_edge(1, 5)
+    CG.add_edge(1, 6)
+    CG.add_edge(1, 7)
+    CG.add_edge(2, 3)
+    CG.add_edge(2, 5)
+    CG.add_edge(2, 6)
+    CG.add_edge(3, 4)
+    CG.add_edge(3, 5)
+    CG.add_edge(3, 6)
+    CG.add_edge(4, 6)
+    CG.add_edge(4, 10)
+    CG.add_edge(5, 6)
+    CG.add_edge(5, 8)
+    CG.add_edge(5, 9)
+    CG.add_edge(6, 8)
+    CG.add_edge(7, 8)
+    CG.add_edge(8, 10)
+    CG.add_edge(9, 10)
+    return CG
 
 
 def _log(message: str):
