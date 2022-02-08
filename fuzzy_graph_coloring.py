@@ -1,13 +1,15 @@
 __version__ = "0.1.0"
 
+import copy
 import datetime
 import itertools
+import random
+from typing import Tuple
 
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 import pygad
-import random
 from numpy.random import default_rng
 
 
@@ -78,9 +80,10 @@ def _incompatibility_elimination_crossover_factory(graph: nx.Graph):
                 incompatible_colors_parent2 = []
                 for (i, j) in graph.edges():
                     if _y_ij(i, j, parent1):  # if incompatible
-                        incompatible_colors_parent1.append(parent1[i])  # add the color to list of incompatible colors
+                        incompatible_colors_parent1.append(
+                            parent1[i - 1])  # add the color to list of incompatible colors
                     if _y_ij(i, j, parent2):
-                        incompatible_colors_parent2.append(parent2[i])
+                        incompatible_colors_parent2.append(parent2[i - 1])
 
                 # ... and exchange with the colors of other parent except for a random appearance
 
@@ -231,6 +234,10 @@ def fuzzy_color(graph: nx.Graph, k: int = None, verbose: bool = False, local_sea
         the associated fitness or quality.
         If k is not set, a nested dictionary with the extra level of keys k in (1, ..., n [number of nodes]) is returned
     """
+    if not is_fuzzy_graph(graph):
+        graph = transform_to_fuzzy_graph(graph)
+    graph, mapping = _relabel_input_graph(graph)
+
     start_time = datetime.datetime.now()
 
     num_generations = num_generations
@@ -257,14 +264,14 @@ def fuzzy_color(graph: nx.Graph, k: int = None, verbose: bool = False, local_sea
 
     if k is None:
         colorings = {
-            1: {
-                "coloring": {c: 1 for c in range(1, graph.number_of_nodes() + 1)},
-                "score": 0
-            },
-            graph.number_of_nodes(): {
-                "coloring": {c: c for c in range(1, graph.number_of_nodes() + 1)},
-                "score": 1
-            }
+            1: (
+                {mapping.get(c): 1 for c in range(1, graph.number_of_nodes() + 1)},
+                0
+            ),
+            graph.number_of_nodes(): (
+                {mapping.get(c): c for c in range(1, graph.number_of_nodes() + 1)},
+                1
+            )
         }
     else:
         colorings = {}
@@ -304,10 +311,10 @@ def fuzzy_color(graph: nx.Graph, k: int = None, verbose: bool = False, local_sea
         final_solution_fitness = np.max(ga_instance.best_solutions_fitness)
         final_solution_idx = np.argmax(ga_instance.best_solutions_fitness)
 
-        ga_result = {
-            "coloring": {idx + 1: val for idx, val in enumerate(ga_instance.best_solutions[final_solution_idx])},
-            "score": final_solution_fitness
-        }
+        ga_result = (
+            {mapping.get(idx + 1): val for idx, val in enumerate(ga_instance.best_solutions[final_solution_idx])},
+            final_solution_fitness
+        )
         if k is None:
             colorings[_k] = ga_result
         else:
@@ -377,7 +384,7 @@ def is_fuzzy_graph(graph: nx.Graph) -> bool:
     :return: Bool: graph is fuzzy
     """
     weights = nx.get_edge_attributes(graph, "weight")
-    if not weights:
+    if not weights or len(weights) < graph.number_of_nodes():
         return False
     else:
         for weight in weights.values():
@@ -385,6 +392,42 @@ def is_fuzzy_graph(graph: nx.Graph) -> bool:
                 print(weight)
                 return False
     return True
+
+
+def transform_to_fuzzy_graph(input_graph: nx.Graph) -> nx.Graph:
+    """
+    Transforms an input graph to a fuzzy graph by setting the edge attribute weight.
+    Crisp edges have the weight 1. If some edges already have a weight attribute,
+    the weight 1 is added to all remaining crisp edges.
+    :param graph: NetworkX graph
+    :return: NetworkX graph with a valid edge attribute weight
+    """
+    graph = copy.deepcopy(input_graph)
+    weights = nx.get_edge_attributes(graph, "weight")
+    if not weights:
+        nx.set_edge_attributes(graph, 1, "weight")
+    else:
+        for (u, v) in graph.edges():
+            try:
+                weight = graph[u][v]["weight"]
+                if not 0 < weight <= 1:
+                    raise Exception(f"Input graph has invalid weight attribute {weight} for edge ({u},{v})")
+            except KeyError:
+                graph[u][v]["weight"] = 1
+    return graph
+
+
+def _relabel_input_graph(graph: nx.Graph) -> Tuple[nx.Graph, dict]:
+    """
+    Relabels an input graph to use consecutive integers as node labels.
+    Returns a copy and the new mapping which can be used to revert the relabeling.
+
+    :param graph: NetworkX graph
+    :return: Relabeled Graph, mapping
+    """
+    mapping = {new + 1: old for new, old in enumerate(graph.nodes())}
+    int_node_graph = nx.relabel_nodes(graph, mapping={old: new + 1 for new, old in enumerate(graph.nodes())}, copy=True)
+    return int_node_graph, mapping
 
 
 def _build_example_graph_1() -> nx.Graph:
@@ -419,6 +462,31 @@ def _build_example_graph_2() -> nx.Graph:
     TG2.add_edge(6, 7, weight=0.7)
     TG2.add_edge(7, 8, weight=0.6)
     return TG2
+
+
+def _build_example_crisp_graph() -> nx.Graph:
+    CG = nx.Graph()
+    CG.add_edge(1, 2)
+    CG.add_edge(1, 3)
+    CG.add_edge(1, 5)
+    CG.add_edge(1, 6)
+    CG.add_edge(1, 7)
+    CG.add_edge(2, 3)
+    CG.add_edge(2, 5)
+    CG.add_edge(2, 6)
+    CG.add_edge(3, 4)
+    CG.add_edge(3, 5)
+    CG.add_edge(3, 6)
+    CG.add_edge(4, 6)
+    CG.add_edge(4, 10)
+    CG.add_edge(5, 6)
+    CG.add_edge(5, 8)
+    CG.add_edge(5, 9)
+    CG.add_edge(6, 8)
+    CG.add_edge(7, 8)
+    CG.add_edge(8, 10)
+    CG.add_edge(9, 10)
+    return CG
 
 
 def _log(message: str):
