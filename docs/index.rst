@@ -15,6 +15,8 @@ the fuzzy chromatic number and coloring of a graph with fuzzy edges.
 It will create a coloring with a minimal amount of incompatible edges
 using a genetic algorithm.
 
+See repository https://github.com/ferdinand-dhbw/fuzzy-graph-coloring
+
 
 Indices and tables
 ==================
