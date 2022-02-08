@@ -3,14 +3,14 @@ __version__ = "0.1.0"
 import copy
 import datetime
 import itertools
+import random
+from typing import Tuple
 
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 import pygad
-import random
 from numpy.random import default_rng
-from typing import Tuple
 
 
 def _y_ij(i: int, j: int, chromosome: tuple) -> bool:
@@ -235,14 +235,14 @@ def fuzzy_color(graph: nx.Graph, k: int = None, verbose: bool = False, local_sea
 
     if k is None:
         colorings = {
-            1: {
-                "coloring": {mapping.get(c): 1 for c in range(1, graph.number_of_nodes() + 1)},
-                "score": 0
-            },
-            graph.number_of_nodes(): {
-                "coloring": {mapping.get(c): c for c in range(1, graph.number_of_nodes() + 1)},
-                "score": 1
-            }
+            1: (
+                {mapping.get(c): 1 for c in range(1, graph.number_of_nodes() + 1)},
+                0
+            ),
+            graph.number_of_nodes(): (
+                {mapping.get(c): c for c in range(1, graph.number_of_nodes() + 1)},
+                1
+            )
         }
     else:
         colorings = {}
@@ -282,12 +282,10 @@ def fuzzy_color(graph: nx.Graph, k: int = None, verbose: bool = False, local_sea
         final_solution_fitness = np.max(ga_instance.best_solutions_fitness)
         final_solution_idx = np.argmax(ga_instance.best_solutions_fitness)
 
-        ga_result = {
-            "coloring": {
-                mapping.get(idx+1): val for idx, val in enumerate(ga_instance.best_solutions[final_solution_idx])
-            },
-            "score": final_solution_fitness
-        }
+        ga_result = (
+            {mapping.get(idx + 1): val for idx, val in enumerate(ga_instance.best_solutions[final_solution_idx])},
+            final_solution_fitness
+        )
         if k is None:
             colorings[_k] = ga_result
         else:
