@@ -59,4 +59,4 @@ E. Keshavarz, “Vertex-coloring of fuzzy graphs: A new approach,” Journal of 
 
 License
 =======
-Unsere Lizenz
+This project is licensed under GNU General Public License v3.0 (GNU GPLv3). See `LICENSE` in the code repository.
