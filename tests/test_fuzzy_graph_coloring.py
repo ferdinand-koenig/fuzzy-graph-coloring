@@ -77,7 +77,7 @@ def test_fuzzy_color_case_1():
         4: 1
     }
     for k, score in expected_scores.items():
-        assert solution[k]["score"] >= score
+        assert solution[k][1] >= score
 
 
 def test_fuzzy_color_case_2():
@@ -94,4 +94,4 @@ def test_fuzzy_color_case_2():
         8: 1
     }
     for k, score in expected_scores.items():
-        assert solution[k]["score"] >= score
+        assert solution[k][1] >= score
