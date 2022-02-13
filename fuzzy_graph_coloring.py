@@ -62,9 +62,6 @@ def _incompatibility_elimination_crossover_factory(graph: nx.Graph):
         :param ga_instance: Instance of the pygad.GA class
         :return: offspring
         """
-        # assert len(parents) == offspring_size[0]
-        # assert offspring_size[0] == ga_instance.sol_per_pop
-
         idx = 0
         offspring = np.empty((0, parents.shape[1]), int)
         while len(offspring) != offspring_size[0]:
@@ -241,9 +238,9 @@ def fuzzy_color(graph: nx.Graph, k: int = None, verbose: bool = False, local_sea
     start_time = datetime.datetime.now()
 
     num_generations = num_generations
-    solutions_per_pop = solutions_per_pop  # solutions_per_pop = offspring_size + keep_parents
-    num_parents_mating = solutions_per_pop
+    # solutions_per_pop = offspring_size + keep_parents
     keep_parents = int(solutions_per_pop / 2)
+    num_parents_mating = solutions_per_pop - keep_parents
     num_genes = graph.number_of_nodes()
     gene_type = int
     parent_selection_type = "tournament"
