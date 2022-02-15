@@ -231,9 +231,27 @@ def fuzzy_color(graph: nx.Graph, k: int = None, verbose: bool = False, local_sea
         the associated fitness or quality.
         If k is not set, a nested dictionary with the extra level of keys k in (1, ..., n [number of nodes]) is returned
     """
+    if k is not None:
+        if k > graph.number_of_nodes():
+            raise Exception(f"k={k} is bigger than the number of nodes ({graph.number_of_nodes()}).")
+
     if not is_fuzzy_graph(graph):
         graph = transform_to_fuzzy_graph(graph)
     graph, mapping = _relabel_input_graph(graph)
+
+    colorings = {
+        1: (
+            {mapping.get(c): 1 for c in range(1, graph.number_of_nodes() + 1)},
+            0
+        ),
+        graph.number_of_nodes(): (
+            {mapping.get(c): c for c in range(1, graph.number_of_nodes() + 1)},
+            1
+        )
+    }
+
+    if k == 1 or k == graph.number_of_nodes():
+        return colorings[k]
 
     start_time = datetime.datetime.now()
 
@@ -258,20 +276,6 @@ def fuzzy_color(graph: nx.Graph, k: int = None, verbose: bool = False, local_sea
         _log(f"crossover_probability = {crossover_probability}")
         _log(f"mutation_probability = {mutation_probability}")
         _log(f"local_search_probability = {local_search_probability}")
-
-    if k is None:
-        colorings = {
-            1: (
-                {mapping.get(c): 1 for c in range(1, graph.number_of_nodes() + 1)},
-                0
-            ),
-            graph.number_of_nodes(): (
-                {mapping.get(c): c for c in range(1, graph.number_of_nodes() + 1)},
-                1
-            )
-        }
-    else:
-        colorings = {}
 
     for _k in (range(2, graph.number_of_nodes()) if k is None else [k]):
         if verbose:
