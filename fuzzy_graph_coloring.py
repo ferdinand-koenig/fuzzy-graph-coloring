@@ -209,6 +209,67 @@ def _on_stop(ga_instance, last_population_fitness):
         _log(f"Total elapsed time is {str(total_elapsed_time)[2:-4]}")
 
 
+def _alpha_cut(graph: nx.Graph, alpha: float) -> nx.Graph:
+    """
+    Alpha-cut for a given NetworkX Graph. Needs attribute "weight" on edges and removes nodes that are not connected
+    anymore.
+    :param graph: NetworkX Graph which edges have an attribute "weight"
+    :param alpha: Float number for alpha-cut
+    :return: Alpha-cut graph
+    """
+    g = nx.Graph()
+    for u, v, a in graph.edges(data=True):
+        if a["weight"] >= alpha:
+            g.add_edge(u, v, **a)
+    return g
+
+
+def greedy_k_color(G: nx.graph, k):
+    colors = {}
+    available_colors = {c: 0 for c in range(k)}
+    nodes = sorted(G, key=G.degree, reverse=True)  # nx.strategy_largest_first(G, colors)
+    for u in nodes:
+        # Set to keep track of colors of neighbours
+        neighbour_colors = {colors[v] for v in G[u] if v in colors}
+        # Find the first unused color.
+        for color in dict(sorted(available_colors.items(), key=lambda item: item[1])).keys():
+            # sort by how often color is in use. Use the least used colors first
+            if color not in neighbour_colors:
+                available_colors[color] = available_colors[color] + 1
+                break
+        else:
+            raise Exception("No more colors")
+        # Assign the new color to the current node.
+        colors[u] = color
+    return colors
+
+
+def alpha_fuzzy_color(graph: nx.Graph, k: int):
+    if not is_fuzzy_graph(graph):
+        graph = transform_to_fuzzy_graph(graph)
+
+    colorings = {
+        1: (
+            {graph.nodes()[c-1]: 1 for c in range(1, graph.number_of_nodes() + 1)},
+            0
+        ),
+        graph.number_of_nodes(): (
+            {graph.nodes()[c-1]: c for c in range(1, graph.number_of_nodes() + 1)},
+            1
+        )
+    }
+
+    if k == 1 or k == graph.number_of_nodes():
+        return colorings[k]
+
+    # alpha = 1  ==> is there a solution?
+    # 'alpha = 0' ==> solution without violations
+    # get set of weights
+    # binary search ==> smallest alpha
+
+    # improvement: if there are lots of constraints with same weight
+
+
 def fuzzy_color(graph: nx.Graph, k: int = None, verbose: bool = False, local_search_probability: float = 0.2,
                 crossover_probability: float = 0.8, mutation_probability: float = 0.3, num_generations: int = 15,
                 solutions_per_pop: int = 100) -> dict:
@@ -231,6 +292,7 @@ def fuzzy_color(graph: nx.Graph, k: int = None, verbose: bool = False, local_sea
         the associated fitness or quality.
         If k is not set, a nested dictionary with the extra level of keys k in (1, ..., n [number of nodes]) is returned
     """
+    # TODO define specific Exceptions
     if k is not None:
         if k > graph.number_of_nodes():
             raise Exception(f"k={k} is bigger than the number of nodes ({graph.number_of_nodes()}).")
@@ -356,15 +418,15 @@ def bruteforce_fuzzy_color(graph: nx.Graph) -> dict:
     return colorings
 
 
-def draw_weighted_graph(graph: nx.Graph):
+def draw_weighted_graph(graph: nx.Graph, cm=None):
     """
     Plots a given NetworkX graph and labels edges according to their assigned weight.
-
+    TODO update coloring and docstring
     :param graph: NetworkX graph
     :return: None
     """
     pos = nx.circular_layout(graph)
-    nx.draw(graph, pos, labels={node: node for node in graph.nodes()})
+    nx.draw(graph, pos, labels={node: node for node in graph.nodes()}, node_color=cm, cmap=plt.cm.tab10)
     nx.draw_networkx_edge_labels(graph, pos, edge_labels=nx.get_edge_attributes(graph, "weight"))
     plt.show()
 
@@ -400,7 +462,7 @@ def transform_to_fuzzy_graph(input_graph: nx.Graph) -> nx.Graph:
     Transforms an input graph to a fuzzy graph by setting the edge attribute weight.
     Crisp edges have the weight 1. If some edges already have a weight attribute,
     the weight 1 is added to all remaining crisp edges.
-    :param graph: NetworkX graph
+    :param input_graph: NetworkX graph
     :return: NetworkX graph with a valid edge attribute weight
     """
     graph = copy.deepcopy(input_graph)
@@ -500,6 +562,13 @@ def _log(message: str):
 
 
 if __name__ == '__main__':
-    coloring, _ = fuzzy_color(_build_example_graph_1(), 3)
-    print(fuzzy_color(_build_example_graph_1(), 3))
+    # coloring, _ = fuzzy_color(_build_example_graph_1(), 3)
+    # print(fuzzy_color(_build_example_graph_1(), 3))
     # fuzzy_color(_generate_fuzzy_graph(20, 0.25, 42), None, verbose=True)
+    graph = _build_example_crisp_graph()
+    nx_coloring = nx.greedy_color(graph)
+    coloring = greedy_k_color(graph, 13)
+    draw_weighted_graph(graph, [nx_coloring.get(node) for node in graph])
+    print(nx_coloring)
+    draw_weighted_graph(graph, [coloring.get(node) for node in graph])
+    print(coloring)
