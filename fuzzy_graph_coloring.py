@@ -209,28 +209,29 @@ def _on_stop(ga_instance, last_population_fitness):
         _log(f"Total elapsed time is {str(total_elapsed_time)[2:-4]}")
 
 
-def _alpha_cut(graph: nx.Graph, alpha: float) -> nx.Graph:
+def alpha_cut(graph: nx.Graph, alpha: float) -> nx.Graph:
     """
-    Alpha-cut for a given NetworkX Graph. Needs attribute "weight" on edges and removes nodes that are not connected
-    anymore.
+    Alpha-cut for a given NetworkX Graph. Needs attribute "weight" on edges and preserves unconnected vertices.
     :param graph: NetworkX Graph which edges have an attribute "weight"
     :param alpha: Float number for alpha-cut
     :return: Alpha-cut graph
     """
-    g = nx.Graph()
+    g = copy.deepcopy(graph)
     for u, v, a in graph.edges(data=True):
-        if a["weight"] >= alpha:
-            g.add_edge(u, v, **a)
+        if a["weight"] < alpha:
+            g.remove_edge(u, v)
     return g
 
 
-def greedy_k_color(G: nx.graph, k):
+def greedy_k_color(graph: nx.Graph, k):
+    if k > graph.number_of_nodes():
+        raise InvalidKColoringError(f"Graph has no {k}-coloring as it only has {graph.number_of_nodes()} vertices")
     colors = {}
     available_colors = {c: 0 for c in range(k)}
-    nodes = sorted(G, key=G.degree, reverse=True)  # nx.strategy_largest_first(G, colors)
+    nodes = sorted(graph, key=graph.degree, reverse=True)  # nx.strategy_largest_first(G, colors)
     for u in nodes:
         # Set to keep track of colors of neighbours
-        neighbour_colors = {colors[v] for v in G[u] if v in colors}
+        neighbour_colors = {colors[v] for v in graph[u] if v in colors}
         # Find the first unused color.
         for color in dict(sorted(available_colors.items(), key=lambda item: item[1])).keys():
             # sort by how often color is in use. Use the least used colors first
@@ -238,23 +239,25 @@ def greedy_k_color(G: nx.graph, k):
                 available_colors[color] = available_colors[color] + 1
                 break
         else:
-            raise Exception("No more colors")
+            raise NoSolutionException("No more colors")
         # Assign the new color to the current node.
         colors[u] = color
     return colors
 
 
 def alpha_fuzzy_color(graph: nx.Graph, k: int):
+    if not 1 <= k <= graph.number_of_nodes():
+        raise InvalidKColoringError()
     if not is_fuzzy_graph(graph):
         graph = transform_to_fuzzy_graph(graph)
 
     colorings = {
         1: (
-            {graph.nodes()[c-1]: 1 for c in range(1, graph.number_of_nodes() + 1)},
+            {list(graph.nodes())[c]: 1 for c in range(graph.number_of_nodes())},
             0
         ),
         graph.number_of_nodes(): (
-            {graph.nodes()[c-1]: c for c in range(1, graph.number_of_nodes() + 1)},
+            {list(graph.nodes())[c]: c for c in range(graph.number_of_nodes())},
             1
         )
     }
@@ -262,11 +265,22 @@ def alpha_fuzzy_color(graph: nx.Graph, k: int):
     if k == 1 or k == graph.number_of_nodes():
         return colorings[k]
 
-    # alpha = 1  ==> is there a solution?
-    # 'alpha = 0' ==> solution without violations
-    # get set of weights
-    # binary search ==> smallest alpha
+    # Coloring with alpha = 1 alpha-cut (Does a solution exist?)
+    try:
+        coloring = greedy_k_color(alpha_cut(graph, 1), k)
+    except NoSolutionException:
+        raise NoSolutionException("There is no solution where no constraint with weight = 1 is violated!")
 
+    # Coloring with alpha = 0 alpha-cut (Is there a solution without violations)?
+    try:
+        coloring = greedy_k_color(alpha_cut(graph, 0), k)
+    except NoSolutionException:
+        weights = sorted(set(nx.get_edge_attributes(graph, "weight").values()))
+        print(weights)
+        pass
+        # get set of weights
+        # binary search ==> smallest alpha
+    return coloring, 2
     # improvement: if there are lots of constraints with same weight
 
 
@@ -292,10 +306,9 @@ def fuzzy_color(graph: nx.Graph, k: int = None, verbose: bool = False, local_sea
         the associated fitness or quality.
         If k is not set, a nested dictionary with the extra level of keys k in (1, ..., n [number of nodes]) is returned
     """
-    # TODO define specific Exceptions
     if k is not None:
         if k > graph.number_of_nodes():
-            raise Exception(f"k={k} is bigger than the number of nodes ({graph.number_of_nodes()}).")
+            raise InvalidKColoringError(f"k={k} is bigger than the number of nodes ({graph.number_of_nodes()}).")
 
     if not is_fuzzy_graph(graph):
         graph = transform_to_fuzzy_graph(graph)
@@ -474,7 +487,8 @@ def transform_to_fuzzy_graph(input_graph: nx.Graph) -> nx.Graph:
             try:
                 weight = graph[u][v]["weight"]
                 if not 0 < weight <= 1:
-                    raise Exception(f"Input graph has invalid weight attribute {weight} for edge ({u},{v})")
+                    raise InvalidFuzzyGraphError(
+                        f"Input graph has invalid weight attribute {weight} for edge ({u},{v})")
             except KeyError:
                 graph[u][v]["weight"] = 1
     return graph
@@ -561,14 +575,29 @@ def _log(message: str):
     print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] {message}")
 
 
+class InvalidKColoringError(Exception):
+    """Raised when the k-coloring does not exist"""
+    pass
+
+
+class InvalidFuzzyGraphError(Exception):
+    """Raised when a fuzzy graph is invalid. For example, weight > 1."""
+    pass
+
+
+class NoSolutionException(Exception):
+    """Raised when no solution is found"""
+    pass
+
+
 if __name__ == '__main__':
     # coloring, _ = fuzzy_color(_build_example_graph_1(), 3)
     # print(fuzzy_color(_build_example_graph_1(), 3))
     # fuzzy_color(_generate_fuzzy_graph(20, 0.25, 42), None, verbose=True)
-    graph = _build_example_crisp_graph()
+    graph = _build_example_graph_1()
     nx_coloring = nx.greedy_color(graph)
-    coloring = greedy_k_color(graph, 13)
+    coloring, _ = alpha_fuzzy_color(graph, 3)
     draw_weighted_graph(graph, [nx_coloring.get(node) for node in graph])
     print(nx_coloring)
-    draw_weighted_graph(graph, [coloring.get(node) for node in graph])
     print(coloring)
+    draw_weighted_graph(graph, [coloring.get(node) for node in graph])
