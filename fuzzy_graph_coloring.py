@@ -72,10 +72,10 @@ def _incompatibility_elimination_crossover_factory(graph: nx.Graph):
                 incompatible_colors_parent1 = []
                 incompatible_colors_parent2 = []
                 for (i, j) in graph.edges():
-                    if _y_ij(i-1, j-1, parent1):  # if incompatible
+                    if _y_ij(i - 1, j - 1, parent1):  # if incompatible
                         incompatible_colors_parent1.append(
                             parent1[i - 1])  # add the color to list of incompatible colors
-                    if _y_ij(i-1, j-1, parent2):
+                    if _y_ij(i - 1, j - 1, parent2):
                         incompatible_colors_parent2.append(parent2[i - 1])
 
                 # ... and exchange with the colors of other parent except for a random appearance
@@ -229,7 +229,7 @@ def _get_coloring_score(graph: nx.Graph, coloring) -> float:
     """
     total_incompatibility = 0
     for (i, j) in graph.edges():
-        y_ij = _y_ij(i, j, coloring) if isinstance(coloring, dict) else _y_ij(i-1, j-1, coloring)  # eq. (2.10a)
+        y_ij = _y_ij(i, j, coloring) if isinstance(coloring, dict) else _y_ij(i - 1, j - 1, coloring)  # eq. (2.10a)
         total_incompatibility += graph[i][j]["weight"] * y_ij
     score = 1 - (total_incompatibility / graph.size(weight="weight"))  # 1 - DTI
     return score
@@ -264,6 +264,13 @@ def greedy_k_color(graph: nx.Graph, k: int) -> dict:
 
 
 def alpha_fuzzy_color(graph: nx.Graph, k: int, return_alpha: bool = False):
+    """
+    A fuzzy coloring algorithm based on alpha-cuts and greedy coloring.
+    :param graph: A networkX graph
+    :param k: Number of colors for a k-coloring
+    :param return_alpha: Returns the best alpha if set to True (defaults to False)
+    :return: Tuple(coloring, score, Optional[alpha])
+    """
     if not 1 <= k <= graph.number_of_nodes():
         raise InvalidKColoringError()
     if not is_fuzzy_graph(graph):
@@ -295,7 +302,6 @@ def alpha_fuzzy_color(graph: nx.Graph, k: int, return_alpha: bool = False):
         coloring = greedy_k_color(alpha_cut(graph, 0), k)
     except NoSolutionException:
         weights = sorted(set(nx.get_edge_attributes(graph, "weight").values()))
-        print(weights)
 
         # binary search on best alpha
         low_idx = 0
@@ -305,7 +311,7 @@ def alpha_fuzzy_color(graph: nx.Graph, k: int, return_alpha: bool = False):
         # break condition: low == alpha == high
         while not (low_idx == alpha_idx and alpha_idx == high_idx):
             alpha_idx = low_idx + (high_idx - low_idx) // 2
-            print(low_idx, alpha_idx, high_idx)
+
             try:
                 coloring = greedy_k_color(alpha_cut(graph, weights[alpha_idx]), k)
             except NoSolutionException:
@@ -551,58 +557,66 @@ def _build_example_graph_1() -> nx.Graph:
     Build example fuzzy graph also presented in the paper Fig. 2.2
     :return: NetworkX Graph
     """
-    TG1 = nx.Graph()
-    TG1.add_edge(1, 2, weight=0.7)
-    TG1.add_edge(1, 3, weight=0.8)
-    TG1.add_edge(1, 4, weight=0.5)
-    TG1.add_edge(2, 3, weight=0.3)
-    TG1.add_edge(2, 4, weight=0.4)
-    TG1.add_edge(3, 4, weight=1.0)
-    return TG1
+    tg1 = nx.Graph()
+    tg1.add_edge(1, 2, weight=0.7)
+    tg1.add_edge(1, 3, weight=0.8)
+    tg1.add_edge(1, 4, weight=0.5)
+    tg1.add_edge(2, 3, weight=0.3)
+    tg1.add_edge(2, 4, weight=0.4)
+    tg1.add_edge(3, 4, weight=1.0)
+    return tg1
 
 
 def _build_example_graph_2() -> nx.Graph:
-    TG2 = nx.Graph()
-    TG2.add_edge(1, 2, weight=0.4)
-    TG2.add_edge(1, 3, weight=0.7)
-    TG2.add_edge(1, 4, weight=0.8)
-    TG2.add_edge(2, 4, weight=0.2)
-    TG2.add_edge(2, 5, weight=0.9)
-    TG2.add_edge(3, 4, weight=0.3)
-    TG2.add_edge(3, 6, weight=1.0)
-    TG2.add_edge(4, 5, weight=0.3)
-    TG2.add_edge(4, 6, weight=0.5)
-    TG2.add_edge(5, 6, weight=0.7)
-    TG2.add_edge(5, 7, weight=0.8)
-    TG2.add_edge(5, 8, weight=0.5)
-    TG2.add_edge(6, 7, weight=0.7)
-    TG2.add_edge(7, 8, weight=0.6)
-    return TG2
+    """
+    Build example fuzzy graph
+    :return: NetworkX Graph
+    """
+    tg2 = nx.Graph()
+    tg2.add_edge(1, 2, weight=0.4)
+    tg2.add_edge(1, 3, weight=0.7)
+    tg2.add_edge(1, 4, weight=0.8)
+    tg2.add_edge(2, 4, weight=0.2)
+    tg2.add_edge(2, 5, weight=0.9)
+    tg2.add_edge(3, 4, weight=0.3)
+    tg2.add_edge(3, 6, weight=1.0)
+    tg2.add_edge(4, 5, weight=0.3)
+    tg2.add_edge(4, 6, weight=0.5)
+    tg2.add_edge(5, 6, weight=0.7)
+    tg2.add_edge(5, 7, weight=0.8)
+    tg2.add_edge(5, 8, weight=0.5)
+    tg2.add_edge(6, 7, weight=0.7)
+    tg2.add_edge(7, 8, weight=0.6)
+    return tg2
 
 
 def _build_example_crisp_graph() -> nx.Graph:
-    CG = nx.Graph()
-    CG.add_edge(1, 2)
-    CG.add_edge(1, 3)
-    CG.add_edge(1, 5)
-    CG.add_edge(1, 6)
-    CG.add_edge(1, 7)
-    CG.add_edge(2, 3)
-    CG.add_edge(2, 5)
-    CG.add_edge(2, 6)
-    CG.add_edge(3, 4)
-    CG.add_edge(3, 5)
-    CG.add_edge(3, 6)
-    CG.add_edge(4, 6)
-    CG.add_edge(4, 10)
-    CG.add_edge(5, 6)
-    CG.add_edge(5, 8)
-    CG.add_edge(5, 9)
-    CG.add_edge(6, 8)
-    CG.add_edge(7, 8)
-    CG.add_edge(8, 10)
-    CG.add_edge(9, 10)
-    return CG
+    """
+    Build example crisp graph with the chromatic number 5.
+    :return: NetworkX Graph
+    """
+    cg = nx.Graph()
+    cg.add_edge(1, 2)
+    cg.add_edge(1, 3)
+    cg.add_edge(1, 5)
+    cg.add_edge(1, 6)
+    cg.add_edge(1, 7)
+    cg.add_edge(2, 3)
+    cg.add_edge(2, 5)
+    cg.add_edge(2, 6)
+    cg.add_edge(3, 4)
+    cg.add_edge(3, 5)
+    cg.add_edge(3, 6)
+    cg.add_edge(4, 6)
+    cg.add_edge(4, 10)
+    cg.add_edge(5, 6)
+    cg.add_edge(5, 8)
+    cg.add_edge(5, 9)
+    cg.add_edge(6, 8)
+    cg.add_edge(7, 8)
+    cg.add_edge(8, 10)
+    cg.add_edge(9, 10)
+    return cg
 
 
 def _log(message: str):
@@ -630,21 +644,11 @@ class NoSolutionException(Exception):
 
 
 if __name__ == '__main__':
-    # coloring, _ = fuzzy_color(_build_example_graph_1(), 3)
-    # print(fuzzy_color(_build_example_graph_1(), 3))
-    # fuzzy_color(_generate_fuzzy_graph(20, 0.25, 42), None, verbose=True)
-    # graph = _build_example_crisp_graph()  #  _build_example_graph_1()
-    # nx_coloring = nx.greedy_color(graph)
-    # coloring, _ = alpha_fuzzy_color(graph, 5)
-    # draw_weighted_graph(graph, [nx_coloring.get(node) for node in graph])
-    # print(nx_coloring)
-    # print(coloring)
-    # draw_weighted_graph(graph, [coloring.get(node) for node in graph])
-
-    graph = _build_example_crisp_graph()
-    coloring, score, alpha = alpha_fuzzy_color(graph, 6, return_alpha=True)
+    graph = _build_example_graph_2()
+    coloring, score, alpha = alpha_fuzzy_color(graph, 3, return_alpha=True)
     print(score, alpha, coloring)
     draw_weighted_graph(graph, [coloring.get(node) for node in graph])
-    coloring, score = fuzzy_color(graph, 6)
+
+    coloring, score = fuzzy_color(graph, 3)
     print(score, coloring)
     draw_weighted_graph(graph, [coloring.get(node) for node in graph])
