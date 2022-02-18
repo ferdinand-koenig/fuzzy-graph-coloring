@@ -13,7 +13,7 @@ import pygad
 from numpy.random import default_rng
 
 
-def _y_ij(i: int, j: int, chromosome: tuple) -> bool:
+def _y_ij(i: int, j: int, chromosome) -> bool:
     """
     Function to determine if vertices i and j are assigned color.
     :param i: Vertex
@@ -21,7 +21,7 @@ def _y_ij(i: int, j: int, chromosome: tuple) -> bool:
     :param chromosome: Color assignment
     :return: Boolean
     """
-    return chromosome[i - 1] == chromosome[j - 1]
+    return chromosome[i] == chromosome[j]
 
 
 def _fitness_function_factory(graph: nx.Graph):
@@ -38,11 +38,7 @@ def _fitness_function_factory(graph: nx.Graph):
         :param solution_idx:
         :return: fitness: 1 - (Degree of Total Incompatibility (DTI))
         """
-        total_incompatibility = 0
-        for (i, j) in graph.edges():
-            total_incompatibility += graph[i][j]["weight"] * _y_ij(i, j, solution)  # eq. (2.10a)
-        fitness = 1 - (total_incompatibility / graph.size(weight="weight"))  # 1 - DTI
-        return fitness
+        return _get_coloring_score(graph, solution)
 
     return _fitness_function
 
@@ -76,10 +72,10 @@ def _incompatibility_elimination_crossover_factory(graph: nx.Graph):
                 incompatible_colors_parent1 = []
                 incompatible_colors_parent2 = []
                 for (i, j) in graph.edges():
-                    if _y_ij(i, j, parent1):  # if incompatible
+                    if _y_ij(i-1, j-1, parent1):  # if incompatible
                         incompatible_colors_parent1.append(
                             parent1[i - 1])  # add the color to list of incompatible colors
-                    if _y_ij(i, j, parent2):
+                    if _y_ij(i-1, j-1, parent2):
                         incompatible_colors_parent2.append(parent2[i - 1])
 
                 # ... and exchange with the colors of other parent except for a random appearance
@@ -223,18 +219,40 @@ def alpha_cut(graph: nx.Graph, alpha: float) -> nx.Graph:
     return g
 
 
-def greedy_k_color(graph: nx.Graph, k):
+def _get_coloring_score(graph: nx.Graph, coloring) -> float:
+    """
+    Calculates the score for a given graph and coloring.
+    Coloring can either be a tuple of colors or a dict (node: color assignment).
+    :param graph: NetworkX Graph
+    :param coloring: Node coloring
+    :return: Coloring score (1 - degree of total incompatibility)
+    """
+    total_incompatibility = 0
+    for (i, j) in graph.edges():
+        y_ij = _y_ij(i, j, coloring) if isinstance(coloring, dict) else _y_ij(i-1, j-1, coloring)  # eq. (2.10a)
+        total_incompatibility += graph[i][j]["weight"] * y_ij
+    score = 1 - (total_incompatibility / graph.size(weight="weight"))  # 1 - DTI
+    return score
+
+
+def greedy_k_color(graph: nx.Graph, k: int) -> dict:
+    """
+    Greedy algorithm to find a k-coloring for a given graph. Chooses available colors by least frequency of occurrence.
+    Raises NoSolutionException if the algorithm can not find coloring for the given k.
+    :param graph: NetworkX graph
+    :param k: Number of colors
+    :return: Color assignment
+    """
     if k > graph.number_of_nodes():
         raise InvalidKColoringError(f"Graph has no {k}-coloring as it only has {graph.number_of_nodes()} vertices")
     colors = {}
     available_colors = {c: 0 for c in range(k)}
-    nodes = sorted(graph, key=graph.degree, reverse=True)  # nx.strategy_largest_first(G, colors)
+    nodes = sorted(graph, key=graph.degree, reverse=True)
     for u in nodes:
         # Set to keep track of colors of neighbours
         neighbour_colors = {colors[v] for v in graph[u] if v in colors}
-        # Find the first unused color.
+        # Sort by frequency of occurrence. Use the least used colors first
         for color in dict(sorted(available_colors.items(), key=lambda item: item[1])).keys():
-            # sort by how often color is in use. Use the least used colors first
             if color not in neighbour_colors:
                 available_colors[color] = available_colors[color] + 1
                 break
@@ -245,7 +263,7 @@ def greedy_k_color(graph: nx.Graph, k):
     return colors
 
 
-def alpha_fuzzy_color(graph: nx.Graph, k: int):
+def alpha_fuzzy_color(graph: nx.Graph, k: int, return_alpha: bool = False):
     if not 1 <= k <= graph.number_of_nodes():
         raise InvalidKColoringError()
     if not is_fuzzy_graph(graph):
@@ -266,6 +284,7 @@ def alpha_fuzzy_color(graph: nx.Graph, k: int):
         return colorings[k]
 
     # Coloring with alpha = 1 alpha-cut (Does a solution exist?)
+    latest_alpha = 1
     try:
         coloring = greedy_k_color(alpha_cut(graph, 1), k)
     except NoSolutionException:
@@ -277,10 +296,30 @@ def alpha_fuzzy_color(graph: nx.Graph, k: int):
     except NoSolutionException:
         weights = sorted(set(nx.get_edge_attributes(graph, "weight").values()))
         print(weights)
-        pass
-        # get set of weights
-        # binary search ==> smallest alpha
-    return coloring, 2
+
+        # binary search on best alpha
+        low_idx = 0
+        # if 1 is the highest value, do not check it twice ==> high_idx is set one lower
+        high_idx = len(weights) - 1 if 1 not in weights else len(weights) - 2
+        alpha_idx = high_idx
+        # break condition: low == alpha == high
+        while not (low_idx == alpha_idx and alpha_idx == high_idx):
+            alpha_idx = low_idx + (high_idx - low_idx) // 2
+            print(low_idx, alpha_idx, high_idx)
+            try:
+                coloring = greedy_k_color(alpha_cut(graph, weights[alpha_idx]), k)
+            except NoSolutionException:
+                low_idx = alpha_idx + 1
+            else:
+                high_idx = alpha_idx
+                latest_alpha = weights[alpha_idx]
+    else:
+        latest_alpha = 0
+
+    if return_alpha:
+        return coloring, _get_coloring_score(graph, coloring), latest_alpha
+    else:
+        return coloring, _get_coloring_score(graph, coloring)
     # improvement: if there are lots of constraints with same weight
 
 
@@ -594,10 +633,18 @@ if __name__ == '__main__':
     # coloring, _ = fuzzy_color(_build_example_graph_1(), 3)
     # print(fuzzy_color(_build_example_graph_1(), 3))
     # fuzzy_color(_generate_fuzzy_graph(20, 0.25, 42), None, verbose=True)
-    graph = _build_example_graph_1()
-    nx_coloring = nx.greedy_color(graph)
-    coloring, _ = alpha_fuzzy_color(graph, 3)
-    draw_weighted_graph(graph, [nx_coloring.get(node) for node in graph])
-    print(nx_coloring)
-    print(coloring)
+    # graph = _build_example_crisp_graph()  #  _build_example_graph_1()
+    # nx_coloring = nx.greedy_color(graph)
+    # coloring, _ = alpha_fuzzy_color(graph, 5)
+    # draw_weighted_graph(graph, [nx_coloring.get(node) for node in graph])
+    # print(nx_coloring)
+    # print(coloring)
+    # draw_weighted_graph(graph, [coloring.get(node) for node in graph])
+
+    graph = _build_example_crisp_graph()
+    coloring, score, alpha = alpha_fuzzy_color(graph, 6, return_alpha=True)
+    print(score, alpha, coloring)
+    draw_weighted_graph(graph, [coloring.get(node) for node in graph])
+    coloring, score = fuzzy_color(graph, 6)
+    print(score, coloring)
     draw_weighted_graph(graph, [coloring.get(node) for node in graph])
