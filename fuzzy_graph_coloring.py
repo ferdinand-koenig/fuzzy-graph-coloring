@@ -235,12 +235,14 @@ def _get_coloring_score(graph: nx.Graph, coloring) -> float:
     return score
 
 
-def greedy_k_color(graph: nx.Graph, k: int) -> dict:
+def greedy_k_color(graph: nx.Graph, k: int, fair: bool = False) -> dict:
     """
     Greedy algorithm to find a k-coloring for a given graph. Chooses available colors by least frequency of occurrence.
     Raises NoSolutionException if the algorithm can not find coloring for the given k.
     :param graph: NetworkX graph
     :param k: Number of colors
+    :param fair: Tries to assign colors equitably. Caution: There might be solutions with fair = False but no solution
+        with fair = True
     :return: Color assignment
     """
     if k > graph.number_of_nodes():
@@ -251,8 +253,9 @@ def greedy_k_color(graph: nx.Graph, k: int) -> dict:
     for u in nodes:
         # Set to keep track of colors of neighbours
         neighbour_colors = {colors[v] for v in graph[u] if v in colors}
-        # Sort by frequency of occurrence. Use the least used colors first
-        for color in dict(sorted(available_colors.items(), key=lambda item: item[1])).keys():
+        # Choose color of limited set. If [fair], sort by frequency of occurrence. Use the least used colors first
+        for color in [c for c in range(k)] if not fair \
+                else dict(sorted(available_colors.items(), key=lambda item: item[1])).keys():
             if color not in neighbour_colors:
                 available_colors[color] = available_colors[color] + 1
                 break
@@ -263,12 +266,15 @@ def greedy_k_color(graph: nx.Graph, k: int) -> dict:
     return colors
 
 
-def alpha_fuzzy_color(graph: nx.Graph, k: int, return_alpha: bool = False):
+def alpha_fuzzy_color(graph: nx.Graph, k: int, return_alpha: bool = False, fair: bool = False):
     """
     A fuzzy coloring algorithm based on alpha-cuts and greedy coloring.
     :param graph: A networkX graph
     :param k: Number of colors for a k-coloring
     :param return_alpha: Returns the best alpha if set to True (defaults to False)
+    :param fair: Parameter for underlying greedy_k_color-function
+        Tries to assign colors equitably. Caution: There might be solutions with fair = False but no solution
+        with fair = True
     :return: Tuple(coloring, score, Optional[alpha])
     """
     if not 1 <= k <= graph.number_of_nodes():
@@ -293,13 +299,13 @@ def alpha_fuzzy_color(graph: nx.Graph, k: int, return_alpha: bool = False):
     # Coloring with alpha = 1 alpha-cut (Does a solution exist?)
     latest_alpha = 1
     try:
-        coloring = greedy_k_color(alpha_cut(graph, 1), k)
+        coloring = greedy_k_color(alpha_cut(graph, 1), k=k, fair=fair)
     except NoSolutionException:
         raise NoSolutionException("There is no solution where no constraint with weight = 1 is violated!")
 
     # Coloring with alpha = 0 alpha-cut (Is there a solution without violations)?
     try:
-        coloring = greedy_k_color(alpha_cut(graph, 0), k)
+        coloring = greedy_k_color(alpha_cut(graph, 0), k=k, fair=fair)
     except NoSolutionException:
         weights = sorted(set(nx.get_edge_attributes(graph, "weight").values()))
 
@@ -313,7 +319,7 @@ def alpha_fuzzy_color(graph: nx.Graph, k: int, return_alpha: bool = False):
             alpha_idx = low_idx + (high_idx - low_idx) // 2
 
             try:
-                coloring = greedy_k_color(alpha_cut(graph, weights[alpha_idx]), k)
+                coloring = greedy_k_color(alpha_cut(graph, weights[alpha_idx]), k=k, fair=fair)
             except NoSolutionException:
                 low_idx = alpha_idx + 1
             else:
@@ -645,7 +651,7 @@ class NoSolutionException(Exception):
 
 if __name__ == '__main__':
     graph = _build_example_graph_2()
-    coloring, score, alpha = alpha_fuzzy_color(graph, 3, return_alpha=True)
+    coloring, score, alpha = alpha_fuzzy_color(graph, 3, return_alpha=True, fair=True)
     print(score, alpha, coloring)
     draw_weighted_graph(graph, [coloring.get(node) for node in graph])
 
