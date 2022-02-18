@@ -250,17 +250,20 @@ def greedy_k_color(graph: nx.Graph, k: int, fair: bool = False) -> dict:
     colors = {}
     available_colors = {c: 0 for c in range(k)}
     nodes = sorted(graph, key=graph.degree, reverse=True)
-    for u in nodes:
+    for idx, u in enumerate(nodes):
         # Set to keep track of colors of neighbours
         neighbour_colors = {colors[v] for v in graph[u] if v in colors}
-        # Choose color of limited set. If [fair], sort by frequency of occurrence. Use the least used colors first
-        for color in [c for c in range(k)] if not fair \
-                else dict(sorted(available_colors.items(), key=lambda item: item[1])).keys():
-            if color not in neighbour_colors:
-                available_colors[color] = available_colors[color] + 1
-                break
+        if idx < k and not fair:
+            color = idx
         else:
-            raise NoSolutionException("No more colors")
+            # Choose color of limited set. If [fair], sort by frequency of occurrence. Use the least used colors first
+            for color in [c for c in range(k)] if not fair \
+                    else dict(sorted(available_colors.items(), key=lambda item: item[1])).keys():
+                if color not in neighbour_colors:
+                    available_colors[color] = available_colors[color] + 1
+                    break
+            else:
+                raise NoSolutionException("No more colors")
         # Assign the new color to the current node.
         colors[u] = color
     return colors
