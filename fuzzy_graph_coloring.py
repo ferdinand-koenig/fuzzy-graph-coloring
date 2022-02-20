@@ -261,6 +261,7 @@ def greedy_k_color(graph: nx.Graph, k: int, fair: bool = False) -> dict:
             else:
                 raise NoSolutionException("No more colors")
             # Assign the new color to the current node.
+            # TODO: There are special cases, where chromatic number < k !
             colors[u] = color
     else:
         # Do networkX coloring, replace ('fairly') according to "nodes = sorted(graph, key=graph.degree, reverse=True)"
