@@ -3,7 +3,9 @@ __version__ = "0.1.0"
 import copy
 import datetime
 import itertools
+import math
 import random
+from collections import Counter
 from typing import Tuple
 
 import matplotlib.pyplot as plt
@@ -237,7 +239,11 @@ def _get_coloring_score(graph: nx.Graph, coloring) -> float:
 
 def greedy_k_color(graph: nx.Graph, k: int, fair: bool = False) -> dict:
     """
-    Greedy algorithm to find a k-coloring for a given graph. Chooses available colors by least frequency of occurrence.
+    Greedy algorithm to find a k-coloring for a given graph.
+    If fair, Chooses available colors by least frequency of occurrence.
+    If not fair, the NetworkX greedy color with the strategy largest_first is used as a basis. This is extended
+        by selecting the most used color and divide it 50:50 with a new color.
+        That is repeated until all colors are used
     Raises NoSolutionException if the algorithm can not find coloring for the given k.
     :param graph: NetworkX graph
     :param k: Number of colors
@@ -247,26 +253,39 @@ def greedy_k_color(graph: nx.Graph, k: int, fair: bool = False) -> dict:
     """
     if k > graph.number_of_nodes():
         raise InvalidKColoringError(f"Graph has no {k}-coloring as it only has {graph.number_of_nodes()} vertices")
-    colors = {}
+    coloring = {}
     available_colors = {c: 0 for c in range(k)}
     nodes = sorted(graph, key=graph.degree, reverse=True)
-    for idx, u in enumerate(nodes):
-        # Set to keep track of colors of neighbours
-        neighbour_colors = {colors[v] for v in graph[u] if v in colors}
-        if idx < k and not fair:
-            color = idx
-        else:
-            # Choose color of limited set. If [fair], sort by frequency of occurrence. Use the least used colors first
-            for color in [c for c in range(k)] if not fair \
-                    else dict(sorted(available_colors.items(), key=lambda item: item[1])).keys():
+    if fair:
+        for u in nodes:
+            # Set to keep track of colors of neighbours
+            neighbour_colors = {coloring[v] for v in graph[u] if v in coloring}
+            for color in dict(sorted(available_colors.items(), key=lambda item: item[1])).keys():
                 if color not in neighbour_colors:
                     available_colors[color] = available_colors[color] + 1
                     break
             else:
                 raise NoSolutionException("No more colors")
-        # Assign the new color to the current node.
-        colors[u] = color
-    return colors
+            # Assign the new color to the current node.
+            coloring[u] = color
+    else:
+        coloring = nx.greedy_color(graph)
+        if max(coloring.values()) + 1 > k:
+            raise NoSolutionException(f"Minimal solution needs more colors than k={k} < {max(coloring.values()) + 1}")
+
+        for c in range(max(coloring.values()) + 1, k):
+            color_dist = Counter(coloring.values())
+            most_used_color = max(color_dist, key=color_dist.get)
+            if color_dist[most_used_color] <= 1:
+                raise NoSolutionException("Not possible to replace colors")
+            nodes_with_most_used_color = [k for k, v in coloring.items() if v == most_used_color]
+            replace_color_nodes = default_rng().choice(nodes_with_most_used_color,
+                                                       size=math.floor(color_dist[most_used_color] / 2),
+                                                       replace=False)
+            for node in replace_color_nodes:
+                coloring[node] = c
+
+    return coloring
 
 
 def alpha_fuzzy_color(graph: nx.Graph, k: int, return_alpha: bool = False, fair: bool = False):
@@ -498,7 +517,14 @@ def draw_weighted_graph(graph: nx.Graph, cm=None):
     plt.show()
 
 
-def _generate_fuzzy_graph(vertices: int, edge_probability: float, seed: int) -> nx.Graph:
+def _generate_fuzzy_graph(vertices: int, edge_probability: float, seed: int = None) -> nx.Graph:
+    """
+    Generates a random fuzzy graph. Using the same seed produces the same graph and weights each time.
+    :param vertices: Number of vertices
+    :param edge_probability: Probability for edge creation
+    :param seed: Random seed.
+    :return: NetworkX Graph
+    """
     random_graph = nx.fast_gnp_random_graph(n=vertices, p=edge_probability, seed=seed)
     rng = default_rng(seed)
     weights = {edge: np.around(rng.uniform(), decimals=2) for edge in random_graph.edges()}
@@ -654,10 +680,20 @@ class NoSolutionException(Exception):
 
 if __name__ == '__main__':
     graph = _build_example_graph_2()
-    coloring, score, alpha = alpha_fuzzy_color(graph, 3, return_alpha=True, fair=True)
-    print(score, alpha, coloring)
-    draw_weighted_graph(graph, [coloring.get(node) for node in graph])
+    # coloring, score, alpha = alpha_fuzzy_color(graph, 3, return_alpha=True, fair=True)
+    # print(score, alpha, coloring)
+    # draw_weighted_graph(graph, [coloring.get(node) for node in graph])
 
-    coloring, score = fuzzy_color(graph, 3)
-    print(score, coloring)
+    nx_coloring = nx.greedy_color(graph)
+    print(nx_coloring)
+    draw_weighted_graph(graph, [nx_coloring.get(node) for node in graph])
+    print(max(nx_coloring.values())+1)
+
+    coloring = greedy_k_color(graph, 3, fair=False)
+    print(coloring)
     draw_weighted_graph(graph, [coloring.get(node) for node in graph])
+    print(max(coloring.values()) + 1)
+
+    # coloring, score = fuzzy_color(graph, 3)
+    # print(score, coloring)
+    # draw_weighted_graph(graph, [coloring.get(node) for node in graph])
