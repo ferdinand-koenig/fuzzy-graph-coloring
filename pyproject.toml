@@ -3,8 +3,7 @@ name = "fuzzy-graph-coloring"
 version = "0.1.0"
 description = ""
 authors = [
-    "Ferdinand Koenig",
-    "Jonas Rheiner"
+    "Ferdinand Koenig and Jonas Rheiner"
 ]
 packages = [
     { include = "fuzzy_graph_coloring.py" },
