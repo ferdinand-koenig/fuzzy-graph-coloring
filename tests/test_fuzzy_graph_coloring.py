@@ -11,7 +11,7 @@ from fuzzy_graph_coloring import (
 
 
 def test_version():
-    assert __version__ == '0.1.0'
+    assert __version__ == '0.1.1'
 
 
 def test_fuzzy_color_edge_case_1():
