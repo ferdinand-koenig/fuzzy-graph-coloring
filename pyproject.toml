@@ -1,10 +1,15 @@
 [tool.poetry]
 name = "fuzzy-graph-coloring"
 version = "0.1.1"
-description = ""
+description = "fuzzy-graph-coloring is a Python package for calculating the fuzzy chromatic number and coloring of a graph with fuzzy edges."
+license = "GPL-3.0-only"
 authors = [
     "Ferdinand Koenig and Jonas Rheiner"
 ]
+readme = "README.rst"
+repository = "https://github.com/ferdinand-dhbw/fuzzy-graph-coloring"
+keywords = ["graph coloring", "fuzzy graph", "genetic graph coloring", "alpha-cut", "greedy k-coloring"]
+
 packages = [
     { include = "fuzzy_graph_coloring.py" },
 ]
