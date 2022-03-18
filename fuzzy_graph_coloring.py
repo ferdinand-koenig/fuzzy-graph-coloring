@@ -210,6 +210,7 @@ def _on_stop(ga_instance, last_population_fitness):
 def alpha_cut(graph: nx.Graph, alpha: float) -> nx.Graph:
     """
     Alpha-cut for a given NetworkX Graph. Needs attribute "weight" on edges and preserves unconnected vertices.
+
     :param graph: NetworkX Graph which edges have an attribute "weight"
     :param alpha: Float number for alpha-cut
     :return: Alpha-cut graph
@@ -241,13 +242,14 @@ def greedy_k_color(graph: nx.Graph, k: int, fair: bool = False) -> dict:
     """
     Greedy algorithm to find a k-coloring for a given graph.
     If fair, Chooses available colors by least frequency of occurrence.
-    If not fair, the NetworkX greedy color with the strategy largest_first is used as a basis. This is extended
-        by selecting the most used color and divide it 50:50 with a new color.
-        That is repeated until all colors are used
+    If not fair, the NetworkX greedy color with the strategy largest_first is used as a basis. This is extended \
+        by selecting the most used color and divide it 50:50 with a new color. \
+        That is repeated until all colors are used \
     Raises NoSolutionException if the algorithm can not find coloring for the given k.
+
     :param graph: NetworkX graph
     :param k: Number of colors
-    :param fair: Tries to assign colors equitably. Caution: There might be solutions with fair = False but no solution
+    :param fair: Tries to assign colors equitably. Caution: There might be solutions with fair = False but no solution \
         with fair = True
     :return: Color assignment
     """
@@ -291,11 +293,12 @@ def greedy_k_color(graph: nx.Graph, k: int, fair: bool = False) -> dict:
 def alpha_fuzzy_color(graph: nx.Graph, k: int, return_alpha: bool = False, fair: bool = False):
     """
     A fuzzy coloring algorithm based on alpha-cuts and greedy coloring.
+
     :param graph: A networkX graph
     :param k: Number of colors for a k-coloring
     :param return_alpha: Returns the best alpha if set to True (defaults to False)
-    :param fair: Parameter for underlying greedy_k_color-function
-        Tries to assign colors equitably. Caution: There might be solutions with fair = False but no solution
+    :param fair: Parameter for underlying greedy_k_color-function \
+        Tries to assign colors equitably. Caution: There might be solutions with fair = False but no solution \
         with fair = True
     :return: Tuple(coloring, score, Optional[alpha])
     """
@@ -304,19 +307,11 @@ def alpha_fuzzy_color(graph: nx.Graph, k: int, return_alpha: bool = False, fair:
     if not is_fuzzy_graph(graph):
         graph = transform_to_fuzzy_graph(graph)
 
-    colorings = {
-        1: (
-            {list(graph.nodes())[c]: 1 for c in range(graph.number_of_nodes())},
-            0
-        ),
-        graph.number_of_nodes(): (
+    if k == graph.number_of_nodes():
+        return (
             {list(graph.nodes())[c]: c for c in range(graph.number_of_nodes())},
             1
         )
-    }
-
-    if k == 1 or k == graph.number_of_nodes():
-        return colorings[k]
 
     # Coloring with alpha = 1 alpha-cut (Does a solution exist?)
     latest_alpha = 1
@@ -335,48 +330,52 @@ def alpha_fuzzy_color(graph: nx.Graph, k: int, return_alpha: bool = False, fair:
         low_idx = 0
         # if 1 is the highest value, do not check it twice ==> high_idx is set one lower
         high_idx = len(weights) - 1 if 1 not in weights else len(weights) - 2
-        alpha_idx = high_idx
-        # break condition: low == alpha == high
-        while not (low_idx == alpha_idx and alpha_idx == high_idx):
-            alpha_idx = low_idx + (high_idx - low_idx) // 2
 
+        # modified do while with break condition: low == alpha == high
+        while True:
+            alpha_idx = low_idx + (high_idx - low_idx) // 2
             try:
                 coloring = greedy_k_color(alpha_cut(graph, weights[alpha_idx]), k=k, fair=fair)
             except NoSolutionException:
+                if low_idx == alpha_idx and alpha_idx == high_idx:
+                    break
                 low_idx = alpha_idx + 1
             else:
-                high_idx = alpha_idx
                 latest_alpha = weights[alpha_idx]
+                if low_idx == alpha_idx and alpha_idx == high_idx:
+                    break
+                high_idx = alpha_idx
     else:
         latest_alpha = 0
 
     if return_alpha:
         return coloring, _get_coloring_score(graph, coloring), latest_alpha
     else:
+        print(latest_alpha)
         return coloring, _get_coloring_score(graph, coloring)
     # improvement: if there are lots of constraints with same weight
 
 
-def fuzzy_color(graph: nx.Graph, k: int = None, verbose: bool = False, local_search_probability: float = 0.2,
-                crossover_probability: float = 0.8, mutation_probability: float = 0.3, num_generations: int = 15,
-                solutions_per_pop: int = 100) -> dict:
+def genetic_fuzzy_color(graph: nx.Graph, k: int = None, verbose: bool = False, local_search_probability: float = 0.2,
+                        crossover_probability: float = 0.8, mutation_probability: float = 0.3,
+                        num_generations: int = 15, solutions_per_pop: int = 100) -> dict:
     """
     Calculates the fuzzy coloring of a graph with fuzzy edges by leveraging genetic algorithms.
     Selected parameters can be adjusted. In this context, a chromosome is a feasible solution.
 
     :param graph: A NetworkX graph
-    :param k: Defaults to None. Then, all possible colorings are calculated.
+    :param k: Defaults to None. Then, all possible colorings are calculated. \
         If an integer is given, the k-coloring is calculated and returned.
     :param verbose: Gives additional information in console.
-    :param local_search_probability: The probability of the execution of a local search. Searches the local space around
-        chromosome for a better solution. Takes longer with higher probability but yields better results.
-    :param crossover_probability: The probability of Crossover of two parent chromosomes. Opposite case is to copy
+    :param local_search_probability: The probability of the execution of a local search. Searches the local space \
+        around chromosome for a better solution. Takes longer with higher probability but yields better results.
+    :param crossover_probability: The probability of Crossover of two parent chromosomes. Opposite case is to copy \
         the parents into the offspring.
     :param mutation_probability: Gives the probability of mutating a chromosome
     :param num_generations: How many generations will be used to find optimal coloring
     :param solutions_per_pop: How many chromosomes exist per generation
-    :return: Returns a dictionary with the keys 'coloring' and 'score' which are the mapping from nodes to colors and
-        the associated fitness or quality.
+    :return: Returns a dictionary with the keys 'coloring' and 'score' which are the mapping from nodes to colors and \
+        the associated fitness or quality. \
         If k is not set, a nested dictionary with the extra level of keys k in (1, ..., n [number of nodes]) is returned
     """
     if k is not None:
@@ -504,15 +503,17 @@ def bruteforce_fuzzy_color(graph: nx.Graph) -> dict:
     return colorings
 
 
-def draw_weighted_graph(graph: nx.Graph, cm=None):
+def draw_weighted_graph(graph: nx.Graph, node_colors=None):
     """
     Plots a given NetworkX graph and labels edges according to their assigned weight.
-    TODO update coloring and docstring
+    Different colors are limited to 10.
+
     :param graph: NetworkX graph
+    :param node_colors: Array of node colors as integer. Actual colors are given by the predefined colormap.
     :return: None
     """
     pos = nx.circular_layout(graph)
-    nx.draw(graph, pos, labels={node: node for node in graph.nodes()}, node_color=cm, cmap=plt.cm.tab10)
+    nx.draw(graph, pos, labels={node: node for node in graph.nodes()}, node_color=node_colors, cmap=plt.cm.tab10)
     nx.draw_networkx_edge_labels(graph, pos, edge_labels=nx.get_edge_attributes(graph, "weight"))
     plt.show()
 
@@ -684,16 +685,16 @@ if __name__ == '__main__':
     # print(score, alpha, coloring)
     # draw_weighted_graph(graph, [coloring.get(node) for node in graph])
 
-    nx_coloring = nx.greedy_color(graph)
-    print(nx_coloring)
-    draw_weighted_graph(graph, [nx_coloring.get(node) for node in graph])
-    print(max(nx_coloring.values())+1)
+    # nx_coloring = nx.greedy_color(graph)
+    # print(nx_coloring)
+    # draw_weighted_graph(graph, [nx_coloring.get(node) for node in graph])
+    # print(max(nx_coloring.values())+1)
 
-    coloring = greedy_k_color(graph, 3, fair=False)
-    print(coloring)
+    coloring, score, alpha = alpha_fuzzy_color(graph, 3, return_alpha=True, fair=True)
+    print(coloring, score, alpha)
     draw_weighted_graph(graph, [coloring.get(node) for node in graph])
     print(max(coloring.values()) + 1)
 
-    # coloring, score = fuzzy_color(graph, 3)
+    # coloring, score = genetic_fuzzy_color(graph, 3)
     # print(score, coloring)
     # draw_weighted_graph(graph, [coloring.get(node) for node in graph])

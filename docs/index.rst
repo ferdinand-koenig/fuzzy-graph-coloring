@@ -13,7 +13,11 @@ Welcome to fuzzy-graph-coloring's documentation!
 fuzzy-graph-coloring is a Python package for calculating
 the fuzzy chromatic number and coloring of a graph with fuzzy edges.
 It will create a coloring with a minimal amount of incompatible edges
-using a genetic algorithm.
+using a genetic algorithm (:code:`genetic_fuzzy_color`) or a greedy-k-coloring (:code:`greedy_k_color`)
+combined with a binary search (:code:`alpha_fuzzy_color`).
+
+If you don't know which one to use, we recommend :code:`alpha_fuzzy_color`.
+If you are looking for a networkX coloring but with a given k, use :code:`greedy_k_color`.
 
 See repository https://github.com/ferdinand-dhbw/fuzzy-graph-coloring
 
@@ -27,7 +31,7 @@ Indices and tables
 
 Quick-Start
 ===========
-Install package: `pip install fuzzy-graph-coloring`
+Install package: :code:`pip install fuzzy-graph-coloring`
 
 Try simple code:
 
@@ -43,9 +47,11 @@ Try simple code:
    TG1.add_edge(2, 4, weight=0.4)
    TG1.add_edge(3, 4, weight=1.0)
 
-   fgc.fuzzy_color(TG1, 3)
+   print(fgc.alpha_fuzzy_color(TG1, 3, return_alpha=True, fair=True))
 
-Result: `({1: 2, 2: 3, 3: 3, 4: 1}, 0.918918918918919)`
+Result: :code:`({1: 0, 4: 1, 2: 2, 3: 2}, 0.918918918918919, 0.4)`
+
+(Tuple of coloring, score [(1-DTI)], and alpha [of alpha-cut])
 
 Public functions
 ================
@@ -55,8 +61,8 @@ Public functions
 Bibliography
 ============
 The project uses a lot of the by Keshavarz created basics:
-E. Keshavarz, “Vertex-coloring of fuzzy graphs: A new approach,” Journal of Intelligent & Fuzzy Systems, vol. 30, pp. 883–893, 2016, issn: 1875-8967. https://doi.org/10.3233/IFS-151810
+E. Keshavarz, "Vertex-coloring of fuzzy graphs: A new approach," Journal of Intelligent & Fuzzy Systems, vol. 30, pp. 883-893, 2016, issn: 1875-8967. https://doi.org/10.3233/IFS-151810
 
 License
 =======
-This project is licensed under GNU General Public License v3.0 (GNU GPLv3). See `LICENSE` in the code repository.
+This project is licensed under GNU General Public License v3.0 (GNU GPLv3). See :code:`LICENSE` in the code repository.
