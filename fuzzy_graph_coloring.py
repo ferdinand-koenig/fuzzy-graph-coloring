@@ -6,7 +6,7 @@ import itertools
 import math
 import random
 from collections import Counter
-from typing import Tuple
+from typing import Tuple, Any
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -33,11 +33,11 @@ def _fitness_function_factory(graph: nx.Graph):
     :return: fitness_function
     """
 
-    def _fitness_function(solution: tuple, solution_idx):
+    def _fitness_function(solution: tuple, solution_idx: Any):
         """
         Fitness function to measure the quality of a given chromosome, i.e., solution.
         :param solution: Chromosome: tuple with length equal to number of vertices. Each item, i.e., gen is a color
-        :param solution_idx:
+        :param solution_idx: Required by PyGAD interface but is not used
         :return: fitness: 1 - (Degree of Total Incompatibility (DTI))
         """
         return _get_coloring_score(graph, solution)
