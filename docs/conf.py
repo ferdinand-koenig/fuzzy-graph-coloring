@@ -23,7 +23,7 @@ copyright = '2022, Ferdinand Koenig and Jonas Rheiner'
 author = 'Ferdinand Koenig and Jonas Rheiner'
 
 # The full version, including alpha/beta/rc tags
-release = '0.1.2'
+release = '0.1.3'
 
 # -- General configuration ---------------------------------------------------
 
