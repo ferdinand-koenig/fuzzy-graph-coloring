@@ -11,10 +11,15 @@ If you don't know which one to use, we recommend :code:`alpha_fuzzy_color`.
 If you are looking for a networkX coloring but with a given k, use :code:`greedy_k_color`.
 
 See repository https://github.com/ferdinand-dhbw/fuzzy-graph-coloring
+See the paper that accompanied the project https://github.com/ferdinand-dhbw/fuzzy-graph-coloring/docs/KoenigRheinerFGCStudentResearchProject2022.pdf
 
 Quick-Start
 ===========
 Install package: :code:`pip install fuzzy-graph-coloring`
+Consider the following graph:
+
+.. image:: docs/images/uncolored-graph.png
+   :width: 500
 
 Try simple code:
 
@@ -22,19 +27,30 @@ Try simple code:
 
    import fuzzy-graph-coloring as fgc
 
-   TG1 = nx.Graph()
-   TG1.add_edge(1, 2, weight=0.7)
-   TG1.add_edge(1, 3, weight=0.8)
-   TG1.add_edge(1, 4, weight=0.5)
-   TG1.add_edge(2, 3, weight=0.3)
-   TG1.add_edge(2, 4, weight=0.4)
-   TG1.add_edge(3, 4, weight=1.0)
+   TG2 = nx.Graph()
+   TG2.add_edge(1, 2, weight=0.4)
+   TG2.add_edge(1, 3, weight=0.7)
+   TG2.add_edge(1, 4, weight=0.8)
+   TG2.add_edge(2, 4, weight=0.2)
+   TG2.add_edge(2, 5, weight=0.9)
+   TG2.add_edge(3, 4, weight=0.3)
+   TG2.add_edge(3, 6, weight=1.0)
+   TG2.add_edge(4, 5, weight=0.3)
+   TG2.add_edge(4, 6, weight=0.5)
+   TG2.add_edge(5, 6, weight=0.7)
+   TG2.add_edge(5, 7, weight=0.8)
+   TG2.add_edge(5, 8, weight=0.5)
+   TG2.add_edge(6, 7, weight=0.7)
+   TG2.add_edge(7, 8, weight=0.6)
 
-   print(fgc.alpha_fuzzy_color(TG1, 3, return_alpha=True, fair=True))
+   print(fgc.alpha_fuzzy_color(TG2, 3, return_alpha=True, fair=True))
 
-Result: :code:`({1: 0, 4: 1, 2: 2, 3: 2}, 0.918918918918919, 0.4)`
+Result: :code:`{5: 0, 6: 1, 1: 2, 7: 2, 2: 1, 3: 0, 4: 0, 8: 1} 0.9285714285714286 0.4`
 
 (Tuple of coloring, score [(1-DTI)], and alpha [of alpha-cut])
+
+.. image:: docs/images/colored-graph.png
+   :width: 500
 
 Bibliography
 ============
