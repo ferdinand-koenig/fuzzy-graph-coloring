@@ -18,7 +18,7 @@ Quick-Start
 Install package: :code:`pip install fuzzy-graph-coloring`
 Consider the following graph:
 
-.. image:: docs/images/uncolored-graph.png
+.. image:: https://raw.githubusercontent.com/ferdinand-dhbw/fuzzy-graph-coloring/main/docs/images/uncolored-graph.png
    :width: 500
 
 Try simple code:
@@ -49,7 +49,7 @@ Result: :code:`{5: 0, 6: 1, 1: 2, 7: 2, 2: 1, 3: 0, 4: 0, 8: 1} 0.92857142857142
 
 (Tuple of coloring, score [(1-DTI)], and alpha [of alpha-cut])
 
-.. image:: docs/images/colored-graph.png
+.. image:: https://raw.githubusercontent.com/ferdinand-dhbw/fuzzy-graph-coloring/main/docs/images/colored-graph.png
    :width: 500
 
 Bibliography
