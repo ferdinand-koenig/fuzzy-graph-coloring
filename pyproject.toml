@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fuzzy-graph-coloring"
-version = "0.1.1"
+version = "0.1.2"
 description = "fuzzy-graph-coloring is a Python package for calculating the fuzzy chromatic number and coloring of a graph with fuzzy edges."
 license = "GPL-3.0-only"
 authors = [

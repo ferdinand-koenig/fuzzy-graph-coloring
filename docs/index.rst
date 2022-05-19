@@ -20,7 +20,7 @@ If you don't know which one to use, we recommend :code:`alpha_fuzzy_color`.
 If you are looking for a networkX coloring but with a given k, use :code:`greedy_k_color`.
 
 See repository https://github.com/ferdinand-dhbw/fuzzy-graph-coloring
-See the paper that accompanied the project https://github.com/ferdinand-dhbw/fuzzy-graph-coloring/docs/KoenigRheinerFGCStudentResearchProject2022.pdf
+See the paper that accompanied the project https://github.com/ferdinand-dhbw/fuzzy-graph-coloring/blob/main/docs/KoenigRheinerFGCStudentResearchProject2022.pdf
 
 Indices and tables
 ==================
