@@ -262,7 +262,7 @@ def greedy_k_color(graph: nx.Graph, k: int, fair: bool = False) -> dict:
         for u in nodes:
             # Set to keep track of colors of neighbours
             neighbour_colors = {coloring[v] for v in graph[u] if v in coloring}
-            for color in dict(sorted(available_colors.items(), key=lambda item: item[1])).keys():
+            for color in dict(sorted(available_colors.items(), key=lambda item: item[1])):
                 if color not in neighbour_colors:
                     available_colors[color] = available_colors[color] + 1
                     break
